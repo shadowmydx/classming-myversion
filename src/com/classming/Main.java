@@ -51,6 +51,31 @@ public class Main {
     }
 
 
+    public static Set<String> getAllStatementsSet(SootMethod method) {
+        Body body = method.retrieveActiveBody();
+        UnitPatchingChain units = body.getUnits();
+        Iterator iter = units.snapshotIterator();
+        Set<String> result = new HashSet<>();
+        while (iter.hasNext()) {
+            String stmt = iter.next().toString();
+            result.add(stmt.contains(LOG_PREVIOUS) ? null : stmt);
+        }
+        return result;
+    }
+
+
+    public static List<Stmt> getAllStatementsList(SootMethod method) {
+        Body body = method.retrieveActiveBody();
+        UnitPatchingChain units = body.getUnits();
+        Iterator iter = units.snapshotIterator();
+        List<Stmt> result = new ArrayList<>();
+        while (iter.hasNext()) {
+            Stmt stmt = (Stmt)iter.next();
+            result.add(stmt.toString().contains(LOG_PREVIOUS) ? null : stmt);
+        }
+        return result;
+    }
+
     public static void injectPathCount(UnitPatchingChain units, String signature) {
         List<Stmt> targetStatements = new ArrayList<>();
         Iterator<Unit> iterator = units.snapshotIterator();
@@ -230,4 +255,5 @@ public class Main {
         System.out.println("hello");
 
     }
+
 }
