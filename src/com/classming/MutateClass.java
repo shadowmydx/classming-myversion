@@ -1,7 +1,6 @@
 package com.classming;
 
-import soot.SootClass;
-import soot.SootMethod;
+import soot.*;
 import soot.jimple.Stmt;
 
 import java.io.IOException;
@@ -50,6 +49,9 @@ public class MutateClass {
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
         Main.outputClassFile(this.sootClass); // active inject class.
+        for (SootMethod method : this.sootClass.getMethods()) {
+            this.methodLiveBody.put(method.getSignature(), method.retrieveActiveBody());
+        }
         this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, args);
         this.liveMethod = Main.getLiveMethod(this.mainLiveStmt, this.sootClass.getMethods());
         for (SootMethod method : this.liveMethod) {
@@ -90,6 +92,33 @@ public class MutateClass {
         return method;
     }
 
+    public int selectHookingPoint(String signature, int candidates) {
+        int resultIndex = -1;
+        List<Stmt> targetLiveCode = this.methodLiveCode.get(signature);
+//        Body methodBody = this.methodLiveBody.get(signature);
+//        UnitPatchingChain units = methodBody.getUnits();
+        Random rand = new Random();
+        int[] candidatesIndex = new int[candidates];
+        for (int i = 0; i < candidatesIndex.length; i ++) {
+            candidatesIndex[i] = rand.nextInt(targetLiveCode.size());
+        }
+        for (int i = 0; i < candidatesIndex.length; i ++) {
+
+        }
+        return resultIndex;
+    }
+
+    public int computeDefUseSizeByIndex(int index, List<Stmt> targetStmt) {
+        List<ValueBox> tmp = null;
+        for (String key: this.methodLiveCode.keySet()) {
+            targetStmt = this.methodLiveCode.get(key);
+            for (Stmt stmt : targetStmt) {
+                tmp = stmt.getDefBoxes();
+            }
+        }
+        return 0;
+    }
+
     private static double epsilon = 0.05;
 
     private String[] activeArgs;
@@ -98,6 +127,7 @@ public class MutateClass {
     private Set<String> mainLiveStmt;
     private List<MethodCounter> mutationCounter = new ArrayList<>();
     private Map<String, List<Stmt>> methodLiveCode = new HashMap<>();
+    private Map<String, Body> methodLiveBody = new HashMap<>();
     private Map<String, SootMethod> methodMap = new HashMap<>();
     private List<SootMethod> liveMethod;
 
@@ -106,9 +136,10 @@ public class MutateClass {
         Main.initial(args);
         mutateClass.initialize("com.classming.Hello", args);
         mutateClass.sortByPotential();
-        for (int i = 0; i < 100; i ++) {
-            mutateClass.getMethodToMutate();
-        }
+        mutateClass.computeDefUseSizeByIndex(1, null);
+//        for (int i = 0; i < 100; i ++) {
+//            mutateClass.getMethodToMutate();
+//        }
         System.out.println("hello");
     }
 }
