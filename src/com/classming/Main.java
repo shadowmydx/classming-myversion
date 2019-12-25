@@ -25,10 +25,22 @@ public class Main {
         String pathSep = File.pathSeparator;
         String path = System.getProperty("java.class.path");
         for (String classPath :  newPathes) {
-            path += pathSep + classPath;
+            path = classPath + pathSep + path;
         }
         return path;
     }
+
+    public static String temporaryOutput(SootClass sClass, String tmpRoot, String tmpName) throws IOException {
+        String fileName = tmpRoot + "/" + tmpName + sClass.getName();
+        OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
+        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+        JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
+        jasminClass.print(writerOut);
+        writerOut.flush();
+        streamOut.close();
+        return fileName;
+    }
+
 
     public static void outputClassFile(SootClass sClass) throws IOException {
         String fileName = SourceLocator.v().getFileNameFor(sClass, Options.output_format_class);
@@ -40,6 +52,7 @@ public class Main {
         }
         OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
         PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+
         JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
         jasminClass.print(writerOut);
         writerOut.flush();
@@ -71,7 +84,10 @@ public class Main {
         List<Stmt> result = new ArrayList<>();
         while (iter.hasNext()) {
             Stmt stmt = (Stmt)iter.next();
-            result.add(stmt.toString().contains(LOG_PREVIOUS) ? null : stmt);
+            if (!stmt.toString().contains(LOG_PREVIOUS)) {
+                result.add(stmt);
+            }
+//            result.add(stmt.toString().contains(LOG_PREVIOUS) ? null : stmt);
         }
         return result;
     }
@@ -103,17 +119,13 @@ public class Main {
     }
 
     public static void initial(String[] args) {
-        if (initial) {
-            return;
-        }
         List<String> pathes = new ArrayList<>();
-        pathes.add(root);
+//        pathes.add(root);
         pathes.add(generated);
-        pathes.add(target);
+//        pathes.add(target);
         Options.v().parse(args);
         Options.v().set_soot_classpath(generateClassPath(pathes));
         Scene.v().loadNecessaryClasses();
-        initial = true;
 
         Options.v().set_keep_line_number(true);
         SootClass c = Scene.v().forceResolve("Print", SootClass.BODIES);
@@ -197,29 +209,75 @@ public class Main {
     }
 
     public static SootClass loadTargetClass(String className) {
-        SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
+        SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+//        c.setResolvingLevel(0);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method : d) {
             Body body = method.retrieveActiveBody();
             UnitPatchingChain units = body.getUnits();
-            injectPathCount(units, method.getSignature());
+            if (!initial) {
+                injectPathCount(units, method.getSignature());
+            }
         }
+        initial = true;
         return c;
     }
 
     public static void main(String[] args) throws IOException {
 	// write your code here
         initial(args);
-        SootClass c = loadTargetClass("com.classming.Hello");
-//        SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
+//        SootClass c = loadTargetClass("com.classming.Hello");
+        SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
         List<SootMethod> d = c.getMethods();
+        for (SootMethod method: d) {
+            method.retrieveActiveBody();
+        }
+        SootMethod test = d.get(1);
+        Body body = test.getActiveBody();
+        UnitPatchingChain units = body.getUnits();
 
-//
-//        SootMethod test = d.get(1);
-//        Body body = test.getActiveBody();
-//        UnitPatchingChain units = body.getUnits();
+        Local newVar = Jimple.v().newLocal("_M", IntType.v());
+        Value rightValue = IntConstant.v(100);
+        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
+        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
+        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
+        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
+        IfStmt ifGoto = Jimple.v().newIfStmt(cond, substmt);
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        List<Stmt> allStmt = new ArrayList<>();
+        while (iter.hasNext()) {
+            allStmt.add((Stmt)iter.next());
+            System.out.println(allStmt.get(allStmt.size() - 1));
+        }
+        System.out.println("===================================");
+        body.getLocals().add(newVar);
+        units.insertBefore(assign, allStmt.get(1));
+        units.insertBefore(substmt, allStmt.get(1));
+        units.insertBefore(ifGoto, allStmt.get(1));
+        iter = units.snapshotIterator();
+        while (iter.hasNext()) {
+            System.out.println(iter.next().toString());
+        }
+//        System.out.println("===================================");
+//        units.remove(assign);
+//        units.remove(substmt);
+//        units.remove(ifGoto);
+//        iter = units.snapshotIterator();
+//        while (iter.hasNext()) {
+//            System.out.println(iter.next().toString());
+//        }
+//        System.out.println("===================================");
+//        units.insertBefore(assign, allStmt.get(1));
+//        units.insertBefore(substmt, allStmt.get(1));
+//        units.insertBefore(ifGoto, allStmt.get(1));
+//        iter = units.snapshotIterator();
+//        while (iter.hasNext()) {
+//            System.out.println(iter.next().toString());
+//        }
+
+
 //        injectPathCount(units, "void main(java.lang.String[])");
-//        Iterator<Unit> iter = units.snapshotIterator();
 //        int gotoLine = 0, labelLine = 0, line = 0;
 //        while (iter.hasNext()) {
 //            Stmt stmt = (Stmt)iter.next();
@@ -235,10 +293,12 @@ public class Main {
 //        iter = units.snapshotIterator();
 //        line = 0;
 //        Stmt nop = Jimple.v().newNopStmt();
+//
 //        while (iter.hasNext()) {
 //            Stmt stmt = (Stmt)iter.next();
 //            if (line == gotoLine) {
 //                GotoStmt gotoNop = Jimple.v().newGotoStmt(nop);
+//
 //                units.insertBefore(gotoNop, stmt);
 //            }
 //            if (line == labelLine) {
@@ -247,11 +307,12 @@ public class Main {
 //            line ++;
 //        }
         outputClassFile(c);
-        Set<String> usedStmt1 = getExecutedLiveInstructions("com.classming.Hello", "void main(java.lang.String[])", args);
-        List<Stmt> result1 = getActiveInstructions(usedStmt1, "com.classming.Hello", "void main(java.lang.String[])", args);
-
-        Set<String> usedStmt2 = getExecutedLiveInstructions("com.classming.Hello", "void test", args);
-        List<Stmt> result2 = getActiveInstructions(usedStmt2, "com.classming.Hello", "void test", args);
+//        temporaryOutput(c, "./tmp", "aaa");
+//        Set<String> usedStmt1 = getExecutedLiveInstructions("com.classming.Hello", "void main(java.lang.String[])", args);
+//        List<Stmt> result1 = getActiveInstructions(usedStmt1, "com.classming.Hello", "void main(java.lang.String[])", args);
+//
+//        Set<String> usedStmt2 = getExecutedLiveInstructions("com.classming.Hello", "void test", args);
+//        List<Stmt> result2 = getActiveInstructions(usedStmt2, "com.classming.Hello", "void test", args);
         System.out.println("hello");
 
     }

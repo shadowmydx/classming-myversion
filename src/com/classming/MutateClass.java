@@ -1,7 +1,7 @@
 package com.classming;
 
 import soot.*;
-import soot.jimple.Stmt;
+import soot.jimple.*;
 
 import javax.naming.Name;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.*;
  */
 public class MutateClass {
 
+    private static int gotoVarCount = 1;
 
 
     public SootClass getSootClass() {
@@ -37,13 +38,13 @@ public class MutateClass {
         int counter = 0;
         for (SootMethod method : this.liveMethod) {
 //            methodOriginalQuery.put(method.getSignature(), Main.getAllStatementsSet(method)); // for tp selection: all stmts
-            methodOriginalStmtList.addAll(Main.getAllStatementsList(method));
+            methodOriginalStmtList.put(method.getSignature(), Main.getAllStatementsList(method));
             methodMap.put(method.getSignature(), method);
             Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs);
             methodLiveQuery.put(method.getSignature(), usedStmt);
             UsedStatementHelper.addClassMethodUsedStmt(className, method.getSignature(), usedStmt);
             methodLiveCode.put(method.getSignature(), Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs));
-            int callCount = previousMutationCounter == null ? 1 : previousMutationCounter.get(counter ++).getCount();
+            int callCount = previousMutationCounter == null ? 1 : previousMutationCounter.get(counter++).getCount();
             mutationCounter.add(new MethodCounter(method.getSignature(), callCount));
         }
     }
@@ -53,23 +54,64 @@ public class MutateClass {
     }
 
     public void reload() throws IOException {
-        this.initialize(className, activeArgs);
+        G.reset();
+        Main.initial(activeArgs);
+        SootClass newClass = Main.loadTargetClass(this.getClassName());
+        this.setSootClass(newClass);
+        this.initializeSootClass(this.mutationCounter);
     }
 
-    public MutateClass deepCopy() throws IOException {
+    public MutateClass iteration() throws IOException {
+        MethodCounter current = this.getMethodToMutate();
+        this.setCurrentMethod(current);
+        try {
+            this.saveCurrentClass(); // save current class
+            this.gotoMutation(current.getSignature()); // change current topology
+            return this.deepCopy(current.getSignature()); // applied change to new class
+        } catch (Exception e) {
+            e.printStackTrace();
+            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+            Iterator iter = units.snapshotIterator();
+            System.err.println("===============================================================");
+            while (iter.hasNext()) {
+                String stmt = iter.next().toString();
+//            if (!stmt.contains("**** Executed Line")) {
+                System.err.println(stmt);
+//            }
+            }
+            System.err.println("===============================================================");
+            return null;
+        }
+    }
+
+    public void saveCurrentClass() throws IOException {
+        String path = Main.temporaryOutput(sootClass, "./tmp", System.currentTimeMillis() + ".");
+        this.setBackPath(path);
+    }
+
+    public MutateClass deepCopy(String signature) throws IOException {
+
         MutateClass result = new MutateClass();
         result.setActiveArgs(activeArgs);
         result.setClassName(className);
         result.setSootClass(sootClass);
+//        result.setBackPath(this.getBackPath());
+        result.setCurrentMethod(this.getCurrentMethod());  // current method can be only changed in iteration()
         result.initializeSootClass(mutationCounter);
+        if (result.mainLiveStmt.size() == 0|| result.getMethodLiveCode(result.getCurrentMethod().getSignature()).size() == 0) {
+            Main.temporaryOutput(result.getSootClass(), "./nolivecode/", System.currentTimeMillis() + ".");
+            return null; // no live code.
+        }
         return result;
+
+
     }
 
     public void sortByPotential() {
         this.mutationCounter.sort(new Comparator<MethodCounter>() {
             @Override
             public int compare(MethodCounter o1, MethodCounter o2) {
-                return methodLiveCode.get(o1.getSignature()).size()/o1.getCount() - methodLiveCode.get(o2.getSignature()).size()/o2.getCount();
+                return methodLiveCode.get(o1.getSignature()).size() / o1.getCount() - methodLiveCode.get(o2.getSignature()).size() / o2.getCount();
             }
         });
     }
@@ -80,7 +122,7 @@ public class MutateClass {
 
     public MethodCounter getMethodToMutate() {
         double rand = Math.random();
-        int index = (int)(realLog(Math.pow(1 - rand, mutationCounter.size()), epsilon));
+        int index = (int) (realLog(Math.pow(1 - rand, mutationCounter.size()), epsilon));
         if (index >= mutationCounter.size()) {
             index = mutationCounter.size() - 1;
         }
@@ -88,9 +130,12 @@ public class MutateClass {
         method.setCount(method.getCount() + 1);
         this.sortByPotential();
 //        return method;
-        return this.mutationCounter.get(2);
+        return method;
     }
 
+    /*
+     **  insert before
+     */
     public int selectHookingPoint(String signature, int candidates) {
         int resultIndex = 0;
         List<Stmt> targetLiveCode = this.methodLiveCode.get(signature);
@@ -98,11 +143,11 @@ public class MutateClass {
 //        UnitPatchingChain units = methodBody.getUnits();
         Random rand = new Random();
         int[] candidatesIndex = new int[candidates];
-        for (int i = 0; i < candidatesIndex.length; i ++) {
-            candidatesIndex[i] = rand.nextInt(targetLiveCode.size());
+        for (int i = 0; i < candidatesIndex.length; i++) {
+            candidatesIndex[i] = rand.nextInt(targetLiveCode.size() - 1) + 1;
         }
         int maxSize = -1;
-        for (int i = 0; i < candidatesIndex.length; i ++) {
+        for (int i = 0; i < candidatesIndex.length; i++) {
             int defUseConflict = computeDefUseSizeByIndex(candidatesIndex[i], targetLiveCode);
             if (maxSize < defUseConflict) {
                 maxSize = defUseConflict;
@@ -112,12 +157,15 @@ public class MutateClass {
         return resultIndex;
     }
 
+    /*
+     ** insert before
+     */
     public Stmt selectTargetPoints(String signature) {
         Random random = new Random();
         while (true) {
-            int tpIndex = random.nextInt(this.methodOriginalStmtList.size() - 1);
+            int tpIndex = random.nextInt(this.methodOriginalStmtList.get(signature).size() - 1) + 1;
             double rand = random.nextDouble();
-            Stmt nextStmt = this.methodOriginalStmtList.get(tpIndex);
+            Stmt nextStmt = this.methodOriginalStmtList.get(signature).get(tpIndex);
             if (!UsedStatementHelper.queryIfHasInstructionsAlready(className, signature, nextStmt.toString())) {
                 return nextStmt;
             }
@@ -140,9 +188,9 @@ public class MutateClass {
         Set<String> beforeSet = new HashSet<>();
         Set<String> afterSet = new HashSet<>();
 
-        for (Stmt stmt: targetStmt) {
+        for (Stmt stmt : targetStmt) {
             List<ValueBox> defVar = stmt.getDefBoxes();
-            for (ValueBox box: defVar) {
+            for (ValueBox box : defVar) {
                 defInThisMethod.add(box.getValue().toString());
             }
         }
@@ -153,11 +201,39 @@ public class MutateClass {
         return resultSet.size();
     }
 
+    public void gotoMutation(String signature) throws IOException {
+        List<Stmt> liveCode = methodLiveCode.get(signature);
+        int hookingPoint = this.selectHookingPoint(signature, 2);
+        Stmt targetPoint = selectTargetPoints(signature);
+//        System.out.println(targetPoint);
+//        System.out.println(liveCode.get(hookingPoint));
+        Stmt nop = Jimple.v().newNopStmt();
+        Body body = this.methodLiveBody.get(signature);
+        UnitPatchingChain units = body.getUnits();
+        Local newVar = Jimple.v().newLocal("_M" + (gotoVarCount++), IntType.v());
+        body.getLocals().add(newVar);
+        Value rightValue = IntConstant.v(100);
+        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
+        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
+        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
+        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
+        IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop);
+
+        units.insertAfter(assign, liveCode.get(0));
+        units.insertBefore(nop, targetPoint);
+        units.insertBefore(substmt, liveCode.get(hookingPoint));
+        units.insertBefore(ifGoto, liveCode.get(hookingPoint));
+
+        System.out.println("one round.================================================================================");
+
+
+    }
+
     private void liveCodeSetHelper(int start, int end, Set<String> dictionary, Set<String> target, List<Stmt> targetStmt) {
-        for (int i = start; i < end; i ++) {
+        for (int i = start; i < end; i++) {
             Stmt stmt = targetStmt.get(i);
             List<ValueBox> defVar = stmt.getUseAndDefBoxes();
-            for (ValueBox box: defVar) {
+            for (ValueBox box : defVar) {
                 if (dictionary.contains(box.getValue().toString())) {
                     target.add(box.getValue().toString());
                 }
@@ -195,13 +271,38 @@ public class MutateClass {
     private String className;
     private Set<String> mainLiveStmt;
     private List<MethodCounter> mutationCounter = new ArrayList<>();
-//    private Map<String, Set<String>> methodOriginalQuery = new HashMap<>();
-    private List<Stmt> methodOriginalStmtList = new ArrayList<>();
+    //    private Map<String, Set<String>> methodOriginalQuery = new HashMap<>();
+    private Map<String, List<Stmt>> methodOriginalStmtList = new HashMap<>();
     private Map<String, Set<String>> methodLiveQuery = new HashMap<>();
     private Map<String, List<Stmt>> methodLiveCode = new HashMap<>();
     private Map<String, Body> methodLiveBody = new HashMap<>();
     private Map<String, SootMethod> methodMap = new HashMap<>();
     private List<SootMethod> liveMethod;
+
+    public String getBackPath() {
+        return backPath;
+    }
+
+    public void setBackPath(String backPath) {
+        this.backPath = backPath;
+    }
+
+    private String backPath; // record current mutatant path
+
+    public List<Stmt> getMethodOriginalStmtList(String signature) {
+        return methodOriginalStmtList.get(signature);
+    }
+
+    public MethodCounter getCurrentMethod() {
+        return currentMethod;
+    }
+
+    public void setCurrentMethod(MethodCounter currentMethod) {
+        this.currentMethod = currentMethod;
+    }
+
+    private MethodCounter currentMethod;
+
 
     public static void main(String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
@@ -213,6 +314,10 @@ public class MutateClass {
         String test = "<com.classming.Hello: void main(java.lang.String[])>";
         System.out.println(mutateClass.selectHookingPoint(test, 2));
         mutateClass.selectTargetPoints(test);
+        for (int i = 0; i < 100; i++) {
+            MutateClass newOne = mutateClass.iteration();
+        }
+//        newOne.saveCurrentClass();
 //        for (int i = 0; i < 100; i ++) {
 //            mutateClass.getMethodToMutate();
 //        }
