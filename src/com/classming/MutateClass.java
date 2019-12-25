@@ -47,6 +47,8 @@ public class MutateClass {
             int callCount = previousMutationCounter == null ? 1 : previousMutationCounter.get(counter++).getCount();
             mutationCounter.add(new MethodCounter(method.getSignature(), callCount));
         }
+        transformStmtToString(methodOriginalStmtList, methodOriginalStmtStringList);
+        transformStmtToString(methodLiveCode, methodLiveCodeString);
     }
 
     public List<Stmt> getMethodLiveCode(String signature) {
@@ -264,6 +266,17 @@ public class MutateClass {
         return className;
     }
 
+    public static void transformStmtToString(Map<String, List<Stmt>> from, Map<String, List<String>> to) {
+        for (String key: from.keySet()) {
+            List<Stmt> current = from.get(key);
+            List<String> currentString = new ArrayList<>();
+            for (Stmt stmt: current) {
+                currentString.add(stmt.toString());
+            }
+            to.put(key, currentString);
+        }
+    }
+
     public void setClassName(String className) {
         this.className = className;
     }
@@ -273,11 +286,28 @@ public class MutateClass {
     private List<MethodCounter> mutationCounter = new ArrayList<>();
     //    private Map<String, Set<String>> methodOriginalQuery = new HashMap<>();
     private Map<String, List<Stmt>> methodOriginalStmtList = new HashMap<>();
+    private Map<String, List<String>> methodOriginalStmtStringList = new HashMap<>();
     private Map<String, Set<String>> methodLiveQuery = new HashMap<>();
     private Map<String, List<Stmt>> methodLiveCode = new HashMap<>();
+    private Map<String, List<String>> methodLiveCodeString = new HashMap<>();
     private Map<String, Body> methodLiveBody = new HashMap<>();
     private Map<String, SootMethod> methodMap = new HashMap<>();
     private List<SootMethod> liveMethod;
+    private String backPath; // record current mutatant path
+    private double covScore;
+
+
+    public double getCovScore() {
+        return covScore;
+    }
+
+    public void setCovScore(double covScore) {
+        this.covScore = covScore;
+    }
+
+
+
+
 
     public String getBackPath() {
         return backPath;
@@ -287,10 +317,13 @@ public class MutateClass {
         this.backPath = backPath;
     }
 
-    private String backPath; // record current mutatant path
 
     public List<Stmt> getMethodOriginalStmtList(String signature) {
         return methodOriginalStmtList.get(signature);
+    }
+
+    public List<String> getMethodOriginalStmtListString(String signature) {
+        return methodOriginalStmtStringList.get(signature);
     }
 
     public MethodCounter getCurrentMethod() {
@@ -322,5 +355,9 @@ public class MutateClass {
 //            mutateClass.getMethodToMutate();
 //        }
         System.out.println("hello");
+    }
+
+    public List<String> getMethodLiveCodeString(String signature) {
+        return this.methodLiveCodeString.get(signature);
     }
 }
