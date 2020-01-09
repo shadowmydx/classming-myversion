@@ -230,6 +230,71 @@ public class MutateClass {
 
 
     }
+    
+    public void returnMutation(String signature) throws IOException {
+        List<Stmt> liveCode = methodLiveCode.get(signature);
+        int hookingPoint = this.selectHookingPoint(signature, 2);
+        Body body = this.methodLiveBody.get(signature);
+        UnitPatchingChain units = body.getUnits();
+        ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
+        units.insertBefore(returnStmt, liveCode.get(hookingPoint));
+    }
+
+    public void lookUpSwitchMutation(String signature) throws IOException {
+        List<Stmt> liveCode = methodLiveCode.get(signature);
+        int hookingPoint = this.selectHookingPoint(signature, 2);
+//        Stmt targetPoint = selectTargetPoints(signature);
+//        System.out.println(targetPoint);
+//        System.out.println(liveCode.get(hookingPoint));
+
+        Body body = this.methodLiveBody.get(signature);
+        UnitPatchingChain units = body.getUnits();
+        Local newVar = Jimple.v().newLocal("_M" + (gotoVarCount++), IntType.v());
+        body.getLocals().add(newVar);
+
+        //  Setting the switch statement
+        Random rand = new Random();
+        int caseNum = rand.nextInt(3) + 1;  // 1~3 cases
+        List<IntConstant> lookUpValues = new ArrayList<>();
+        List<Stmt> labels = new ArrayList<>();  // nops
+        List<Stmt> selectedTargetPoints = new ArrayList<>();  // targets for lookUp values
+        int gotoVarCountCopy = gotoVarCount - 1;  // value of _M
+        for (int i = 0; i < caseNum; i++){
+            lookUpValues.add(IntConstant.v(--gotoVarCountCopy));
+            Stmt tempTargetPoint = selectTargetPoints(signature);
+            while(selectedTargetPoints.contains(tempTargetPoint)){  // make sure target is different
+                tempTargetPoint = selectTargetPoints(signature);
+            }
+            selectedTargetPoints.add(tempTargetPoint);
+            Stmt nop = Jimple.v().newNopStmt();
+            units.insertBefore(nop, tempTargetPoint);
+            labels.add(nop);
+        }
+        Stmt defaultTargetPoint = selectTargetPoints(signature);
+        while(selectedTargetPoints.contains(defaultTargetPoint)){  // make sure target is different
+            defaultTargetPoint = selectTargetPoints(signature);
+        }
+        Stmt defaultNop = Jimple.v().newNopStmt();
+        units.insertBefore(defaultNop, defaultTargetPoint);
+        JLookupSwitchStmt switchStmt = new JLookupSwitchStmt(newVar, lookUpValues, labels, defaultNop);
+
+
+        Stmt skipSwitch = Jimple.v().newNopStmt();
+        Value rightValue = IntConstant.v(100);
+        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
+        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
+        ConditionExpr cond = Jimple.v().newLeExpr(newVar, IntConstant.v(0));  // <= then skip switch
+        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
+        IfStmt ifGoto = Jimple.v().newIfStmt(cond, skipSwitch);
+
+        units.insertAfter(assign, liveCode.get(0));
+        units.insertBefore(substmt, liveCode.get(hookingPoint));
+        units.insertBefore(ifGoto, liveCode.get(hookingPoint));
+        units.insertBefore(switchStmt, liveCode.get(hookingPoint));
+        units.insertBefore(skipSwitch, liveCode.get(hookingPoint));
+
+        System.out.println("one round.================================================================================");
+    }
 
     private void liveCodeSetHelper(int start, int end, Set<String> dictionary, Set<String> target, List<Stmt> targetStmt) {
         for (int i = start; i < end; i++) {
