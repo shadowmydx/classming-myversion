@@ -47,12 +47,12 @@ public class ClassmingEntry {
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
     }
 
-    private static double fitness(double previousCov, double currentCov, int total) {
+    public static double fitness(double previousCov, double currentCov, int total) {
         double result = Math.exp(0.08 * total * (previousCov - currentCov));
         return 1.0 < result ? 1.0 : result;
     }
 
-    private static double calculateCovScore(MutateClass mutateClass) {
+    public static double calculateCovScore(MutateClass mutateClass) {
         MethodCounter current = mutateClass.getCurrentMethod();
         List<String> currentLiveCode = mutateClass.getMethodLiveCodeString(current.getSignature());
         List<String> originalCode = mutateClass.getMethodOriginalStmtListString(current.getSignature());

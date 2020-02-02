@@ -2,6 +2,7 @@ package com.classming;
 
 import soot.*;
 import soot.jimple.*;
+import soot.jimple.internal.JLookupSwitchStmt;
 
 import javax.naming.Name;
 import java.io.IOException;
@@ -77,14 +78,57 @@ public class MutateClass {
             System.err.println("===============================================================");
             while (iter.hasNext()) {
                 String stmt = iter.next().toString();
-//            if (!stmt.contains("**** Executed Line")) {
                 System.err.println(stmt);
-//            }
             }
             System.err.println("===============================================================");
             return null;
         }
     }
+
+
+    public MutateClass returnIteration() throws IOException {
+        MethodCounter current = this.getMethodToMutate();
+        this.setCurrentMethod(current);
+        try {
+            this.saveCurrentClass(); // save current class
+            this.returnMutation(current.getSignature()); // change current topology
+            return this.deepCopy(current.getSignature()); // applied change to new class
+        } catch (Exception e) {
+            e.printStackTrace();
+            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+            Iterator iter = units.snapshotIterator();
+            System.err.println("===============================================================");
+            while (iter.hasNext()) {
+                String stmt = iter.next().toString();
+                System.err.println(stmt);
+            }
+            System.err.println("===============================================================");
+            return null;
+        }
+    }
+
+
+    public MutateClass lookUpSwitchIteration() throws IOException {
+        MethodCounter current = this.getMethodToMutate();
+        this.setCurrentMethod(current);
+        try {
+            this.saveCurrentClass(); // save current class
+            this.lookUpSwitchMutation(current.getSignature()); // change current topology
+            return this.deepCopy(current.getSignature()); // applied change to new class
+        } catch (Exception e) {
+            e.printStackTrace();
+            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+            Iterator iter = units.snapshotIterator();
+            System.err.println("===============================================================");
+            while (iter.hasNext()) {
+                String stmt = iter.next().toString();
+                System.err.println(stmt);
+            }
+            System.err.println("===============================================================");
+            return null;
+        }
+    }
+
 
     public void saveCurrentClass() throws IOException {
         String path = Main.temporaryOutput(sootClass, "./tmp", System.currentTimeMillis() + ".");
