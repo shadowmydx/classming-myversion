@@ -29,7 +29,7 @@ public class ClassmingEntry {
                 double covScore = calculateCovScore(newOne);
                 double rand = random.nextDouble();
                 System.out.println(covScore);
-                double fitnessScore = fitness(calculateCovScore(mutateClass), currentLiveCode.size(), originalCode.size());
+                double fitnessScore = fitness(calculateCovScore(mutateClass), covScore, originalCode.size());
                 if(rand < fitnessScore) {
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
@@ -61,7 +61,7 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 10, args);
+        process("com.classming.Hello", 3, args);
     }
 
 
