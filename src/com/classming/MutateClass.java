@@ -67,20 +67,20 @@ public class MutateClass {
     public MutateClass iteration() throws IOException {
         MethodCounter current = this.getMethodToMutate();
         this.setCurrentMethod(current);
+        this.saveCurrentClass(); // save current class
         try {
-            this.saveCurrentClass(); // save current class
             this.gotoMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-            e.printStackTrace();
-            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
-            Iterator iter = units.snapshotIterator();
-            System.err.println("===============================================================");
-            while (iter.hasNext()) {
-                String stmt = iter.next().toString();
-                System.err.println(stmt);
-            }
-            System.err.println("===============================================================");
+//            e.printStackTrace();
+//            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+//            Iterator iter = units.snapshotIterator();
+//            System.err.println("===============================================================");
+//            while (iter.hasNext()) {
+//                String stmt = iter.next().toString();
+//                System.err.println(stmt);
+//            }
+//            System.err.println("===============================================================");
             return null;
         }
     }
@@ -89,20 +89,20 @@ public class MutateClass {
     public MutateClass returnIteration() throws IOException {
         MethodCounter current = this.getMethodToMutate();
         this.setCurrentMethod(current);
+        this.saveCurrentClass(); // save current class
         try {
-            this.saveCurrentClass(); // save current class
             this.returnMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-            e.printStackTrace();
-            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
-            Iterator iter = units.snapshotIterator();
-            System.err.println("===============================================================");
-            while (iter.hasNext()) {
-                String stmt = iter.next().toString();
-                System.err.println(stmt);
-            }
-            System.err.println("===============================================================");
+//            e.printStackTrace();
+//            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+//            Iterator iter = units.snapshotIterator();
+//            System.err.println("===============================================================");
+//            while (iter.hasNext()) {
+//                String stmt = iter.next().toString();
+//                System.err.println(stmt);
+//            }
+//            System.err.println("===============================================================");
             return null;
         }
     }
@@ -111,20 +111,20 @@ public class MutateClass {
     public MutateClass lookUpSwitchIteration() throws IOException {
         MethodCounter current = this.getMethodToMutate();
         this.setCurrentMethod(current);
+        this.saveCurrentClass(); // save current class
         try {
-            this.saveCurrentClass(); // save current class
             this.lookUpSwitchMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-            e.printStackTrace();
-            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
-            Iterator iter = units.snapshotIterator();
-            System.err.println("===============================================================");
-            while (iter.hasNext()) {
-                String stmt = iter.next().toString();
-                System.err.println(stmt);
-            }
-            System.err.println("===============================================================");
+//            e.printStackTrace();
+//            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
+//            Iterator iter = units.snapshotIterator();
+//            System.err.println("===============================================================");
+//            while (iter.hasNext()) {
+//                String stmt = iter.next().toString();
+//                System.err.println(stmt);
+//            }
+//            System.err.println("===============================================================");
             return null;
         }
     }

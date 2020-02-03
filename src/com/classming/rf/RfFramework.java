@@ -45,13 +45,14 @@ public class RfFramework {
             Action action = actionContainer.get(actionString);
             State nextState = action.proceedAction(currentState.getTarget(), mutateAcceptHistory); // sootclass has changed here for all objects
             MutateClass newOne = nextState.getTarget();
-            if (actionString.equals(State.BACKTRACK)) {
-                System.out.println("backtrack here");
-                currentState = nextState;
-                continue;
-            }
+//            if (actionString.equals(State.BACKTRACK)) {
+//                System.out.println("backtrack here");
+//                currentState = nextState;
+//                continue;
+//            }
             if (newOne != null) {
-                MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget();
+//                MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget();
+                MutateClass previousClass = currentState.getTarget();
                 MethodCounter current = newOne.getCurrentMethod();
                 List<String> originalCode = previousClass.getMethodOriginalStmtListString(current.getSignature());
                 double covScore = ClassmingEntry.calculateCovScore(newOne);
@@ -60,6 +61,7 @@ public class RfFramework {
                 double fitnessScore = ClassmingEntry.fitness(ClassmingEntry.calculateCovScore(mutateClass), covScore, originalCode.size());
                 if(rand < fitnessScore) {
                     currentState.updateScore(actionString, fitnessScore);
+                    System.out.println(actionString);
                     mutateAcceptHistory.add(nextState);
                     currentState = nextState;
                 } else {
@@ -68,7 +70,8 @@ public class RfFramework {
                 }
 
             } else {
-                mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget());
+//                mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget());
+                mutateClass = Recover.recoverFromPath(currentState.getTarget());
                 currentState.setTarget(mutateClass);
                 currentState.updateScore(actionString, DEAD_END);
             }
@@ -81,7 +84,7 @@ public class RfFramework {
     public static void main(String[] args) throws IOException {
         RfFramework framework = new RfFramework();
         try {
-            framework.process("com.classming.Hello", 120, args);
+            framework.process("com.classming.Hello", 500, args);
         }catch (NullPointerException e) {
             e.printStackTrace();
         }
