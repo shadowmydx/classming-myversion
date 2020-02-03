@@ -61,7 +61,7 @@ public class State {
                 candidates.add(i);
             }
         }
-        int resultIndex = candidates.get(random.nextInt(scores.size()));
+        int resultIndex = candidates.get(random.nextInt(candidates.size()));
         return actions.get(resultIndex);
     }
 }

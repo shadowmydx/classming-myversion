@@ -64,9 +64,15 @@ public class RfFramework {
                 currentState.setTarget(mutateClass);
                 currentState.updateScore(actionString, DEAD_END);
             }
+
         }
 
         Recover.recoverFromPath(mutateAcceptHistory.get(0).getTarget());
+    }
+
+    public static void main(String[] args) throws IOException {
+        RfFramework framework = new RfFramework();
+        framework.process("com.classming.Hello", 20, args);
     }
 
 }
