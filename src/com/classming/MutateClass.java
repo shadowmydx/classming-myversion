@@ -16,7 +16,7 @@ import java.util.*;
 public class MutateClass {
 
     private static int gotoVarCount = 1;
-
+    private static int loopLimit = 5;
 
     public SootClass getSootClass() {
         return sootClass;
@@ -248,6 +248,7 @@ public class MutateClass {
     }
 
     public void gotoMutation(String signature) throws IOException {
+        System.out.println("one round start in goto.================================================================================");
         List<Stmt> liveCode = methodLiveCode.get(signature);
         int hookingPoint = this.selectHookingPoint(signature, 2);
         Stmt targetPoint = selectTargetPoints(signature);
@@ -258,7 +259,7 @@ public class MutateClass {
         UnitPatchingChain units = body.getUnits();
         Local newVar = Jimple.v().newLocal("_M" + (gotoVarCount++), IntType.v());
         body.getLocals().add(newVar);
-        Value rightValue = IntConstant.v(100);
+        Value rightValue = IntConstant.v(loopLimit);
         AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
         SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
         ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
@@ -270,7 +271,6 @@ public class MutateClass {
         units.insertBefore(substmt, liveCode.get(hookingPoint));
         units.insertBefore(ifGoto, liveCode.get(hookingPoint));
 
-        System.out.println("one round.================================================================================");
 
 
     }
@@ -285,6 +285,7 @@ public class MutateClass {
     }
 
     public void lookUpSwitchMutation(String signature) throws IOException {
+        System.out.println("one round start in lookup.================================================================================");
         List<Stmt> liveCode = methodLiveCode.get(signature);
         int hookingPoint = this.selectHookingPoint(signature, 2);
 //        Stmt targetPoint = selectTargetPoints(signature);
@@ -324,7 +325,7 @@ public class MutateClass {
 
 
         Stmt skipSwitch = Jimple.v().newNopStmt();
-        Value rightValue = IntConstant.v(100);
+        Value rightValue = IntConstant.v(loopLimit);
         AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
         SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
         ConditionExpr cond = Jimple.v().newLeExpr(newVar, IntConstant.v(0));  // <= then skip switch
@@ -337,7 +338,6 @@ public class MutateClass {
         units.insertBefore(switchStmt, liveCode.get(hookingPoint));
         units.insertBefore(skipSwitch, liveCode.get(hookingPoint));
 
-        System.out.println("one round.================================================================================");
     }
 
     private void liveCodeSetHelper(int start, int end, Set<String> dictionary, Set<String> target, List<Stmt> targetStmt) {

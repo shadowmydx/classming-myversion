@@ -38,8 +38,10 @@ public class RfFramework {
         Random random = new Random();
         State currentState = new State();
         currentState.setTarget(mutateClass);
+        mutateClass.saveCurrentClass(); // in case 1st backtrack no backup
         mutateAcceptHistory.add(currentState);
         for (int i = 0; i < iterationCount; i ++) {
+            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
 //            MutateClass newOne = mutateClass.iteration(); // sootclass has changed here for all objects.
             String actionString = currentState.selectAction();
             Action action = actionContainer.get(actionString);
@@ -52,13 +54,17 @@ public class RfFramework {
 //            }
             if (newOne != null) {
 //                MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget();
+                newOne.saveCurrentClass(); // because only no backtrack can trigger backup, this line ensure class is saved.
                 MutateClass previousClass = currentState.getTarget();
                 MethodCounter current = newOne.getCurrentMethod();
                 List<String> originalCode = previousClass.getMethodOriginalStmtListString(current.getSignature());
                 double covScore = ClassmingEntry.calculateCovScore(newOne);
                 double rand = random.nextDouble();
                 System.out.println(covScore);
-                double fitnessScore = ClassmingEntry.fitness(ClassmingEntry.calculateCovScore(mutateClass), covScore, originalCode.size());
+                double fitnessScore = 0.7; // indicate big change in original code.
+                if (originalCode != null) {
+                    fitnessScore = ClassmingEntry.fitness(ClassmingEntry.calculateCovScore(mutateClass), covScore, originalCode.size());
+                }
                 if(rand < fitnessScore) {
                     currentState.updateScore(actionString, fitnessScore);
                     System.out.println(actionString);
@@ -77,7 +83,7 @@ public class RfFramework {
             }
 
         }
-
+        System.out.println("Total size is : " + mutateAcceptHistory.size());
         Recover.recoverFromPath(mutateAcceptHistory.get(0).getTarget());
     }
 

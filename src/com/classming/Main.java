@@ -31,14 +31,19 @@ public class Main {
     }
 
     public static String temporaryOutput(SootClass sClass, String tmpRoot, String tmpName) throws IOException {
-        String fileName = tmpRoot + "/" + tmpName + sClass.getName();
-        OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
-        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
-        JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
-        jasminClass.print(writerOut);
-        writerOut.flush();
-        streamOut.close();
-        return fileName;
+        try {
+            String fileName = tmpRoot + "/" + tmpName + sClass.getName();
+            OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
+            PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+            JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
+            jasminClass.print(writerOut);
+            writerOut.flush();
+            streamOut.close();
+            return fileName;
+        } catch (Exception e) {
+            System.out.println("should not");
+            return null;
+        }
     }
 
 
@@ -236,13 +241,13 @@ public class Main {
         Body body = test.getActiveBody();
         UnitPatchingChain units = body.getUnits();
 
-        Local newVar = Jimple.v().newLocal("_M", IntType.v());
-        Value rightValue = IntConstant.v(100);
-        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
-        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
-        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
-        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
-        IfStmt ifGoto = Jimple.v().newIfStmt(cond, substmt);
+//        Local newVar = Jimple.v().newLocal("_M", IntType.v());
+//        Value rightValue = IntConstant.v(100);
+//        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
+//        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
+//        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
+//        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
+//        IfStmt ifGoto = Jimple.v().newIfStmt(cond, substmt);
         Iterator<Unit> iter = units.snapshotIterator();
 
         List<Stmt> allStmt = new ArrayList<>();
@@ -251,14 +256,14 @@ public class Main {
             System.out.println(allStmt.get(allStmt.size() - 1));
         }
         System.out.println("===================================");
-        body.getLocals().add(newVar);
-        units.insertBefore(assign, allStmt.get(1));
-        units.insertBefore(substmt, allStmt.get(1));
-        units.insertBefore(ifGoto, allStmt.get(1));
-        iter = units.snapshotIterator();
-        while (iter.hasNext()) {
-            System.out.println(iter.next().toString());
-        }
+//        body.getLocals().add(newVar);
+//        units.insertBefore(assign, allStmt.get(1));
+//        units.insertBefore(substmt, allStmt.get(1));
+//        units.insertBefore(ifGoto, allStmt.get(1));
+//        iter = units.snapshotIterator();
+//        while (iter.hasNext()) {
+//            System.out.println(iter.next().toString());
+//        }
 //        System.out.println("===================================");
 //        units.remove(assign);
 //        units.remove(substmt);
@@ -306,7 +311,7 @@ public class Main {
 //            }
 //            line ++;
 //        }
-        outputClassFile(c);
+//        outputClassFile(c);
 //        temporaryOutput(c, "./tmp", "aaa");
 //        Set<String> usedStmt1 = getExecutedLiveInstructions("com.classming.Hello", "void main(java.lang.String[])", args);
 //        List<Stmt> result1 = getActiveInstructions(usedStmt1, "com.classming.Hello", "void main(java.lang.String[])", args);
