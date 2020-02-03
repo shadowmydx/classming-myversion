@@ -11,6 +11,20 @@ import java.util.Random;
 
 public class ClassmingEntry {
 
+    public static MutateClass randomMutation(MutateClass target) throws IOException {
+        Random random = new Random();
+        int randomAction = random.nextInt(3);
+        switch (randomAction) {
+            case 0:
+                return target.iteration();
+            case 1:
+                return target.lookUpSwitchIteration();
+            case 2:
+                return target.returnIteration();
+        }
+        return null;
+    }
+
     public static void process(String className, int iterationCount, String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
@@ -20,7 +34,8 @@ public class ClassmingEntry {
         Random random = new Random();
         mutateAcceptHistory.add(mutateClass);
         for (int i = 0; i < iterationCount; i ++) {
-            MutateClass newOne = mutateClass.iteration(); // sootclass has changed here for all objects.
+            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+            MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
                 MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1);
                 MethodCounter current = newOne.getCurrentMethod();
@@ -40,7 +55,7 @@ public class ClassmingEntry {
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                System.out.println(mutateClass.getBackPath());
+//                System.out.println(mutateClass.getBackPath());
             }
         }
 
@@ -61,7 +76,7 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 3, args);
+        process("com.classming.Hello", 500, args);
     }
 
 
