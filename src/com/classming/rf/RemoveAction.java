@@ -6,7 +6,7 @@ import java.util.List;
 
 public class RemoveAction implements Action{
     @Override
-    public MutateClass proceedAction(MutateClass target, List<State> total) {
+    public State proceedAction(MutateClass target, List<State> total) {
         return null;
     }
 }

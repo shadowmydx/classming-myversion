@@ -7,9 +7,12 @@ import java.util.List;
 
 public class LookupAction implements Action{
     @Override
-    public MutateClass proceedAction(MutateClass target, List<State> total) {
+    public State proceedAction(MutateClass target, List<State> total) {
         try {
-            return target.lookUpSwitchIteration();
+            MutateClass newOne = target.lookUpSwitchIteration();
+            State nextState = new State();
+            nextState.setTarget(newOne);
+            return nextState;
         } catch (IOException e) {
             e.printStackTrace();
             return null;

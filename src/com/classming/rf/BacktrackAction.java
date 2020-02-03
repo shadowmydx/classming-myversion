@@ -7,9 +7,13 @@ import java.util.Random;
 
 public class BacktrackAction implements Action{
     @Override
-    public MutateClass proceedAction(MutateClass target, List<State> total) {
+    public State proceedAction(MutateClass target, List<State> total) {
         Random random = new Random();
         int selectedIndex = random.nextInt(total.size());
-        return total.get(selectedIndex).getTarget();
+        return total.get(selectedIndex);
+//        State current = total.get(selectedIndex);
+//        String actionString = current.selectActionWithoutBacktrack();
+//        Action action = RfFramework.getActionContainer().get(actionString);
+//        return action.proceedAction(current.getTarget(), total);
     }
 }

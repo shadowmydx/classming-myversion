@@ -7,9 +7,12 @@ import java.util.List;
 
 public class GotoAction implements Action{
     @Override
-    public MutateClass proceedAction(MutateClass target, List<State> total) {
+    public State proceedAction(MutateClass target, List<State> total) {
         try {
-            return target.iteration();
+            MutateClass newOne = target.iteration();
+            State nextState = new State();
+            nextState.setTarget(newOne);
+            return nextState;
         } catch (IOException e) {
             e.printStackTrace();
             return null;

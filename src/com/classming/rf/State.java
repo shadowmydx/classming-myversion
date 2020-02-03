@@ -16,10 +16,10 @@ public class State {
     public static final String RETURN = "return";
 
     State() {
-        mappingToIndex.put(GOTO, 0);
-        actions.add(GOTO);
-        mappingToIndex.put(BACKTRACK, 1);
+        mappingToIndex.put(BACKTRACK, 0);
         actions.add(BACKTRACK);
+        mappingToIndex.put(GOTO, 1);
+        actions.add(GOTO);
         mappingToIndex.put(LOOK_UP, 2);
         actions.add(LOOK_UP);
         mappingToIndex.put(RETURN, 3);
@@ -64,4 +64,25 @@ public class State {
         int resultIndex = candidates.get(random.nextInt(candidates.size()));
         return actions.get(resultIndex);
     }
+
+    public String selectActionWithoutBacktrack() {
+        Random random = new Random();
+        if (random.nextDouble() < exploreRate) {
+            return actions.get(random.nextInt(actions.size() - 1) + 1);
+        }
+        List<Double> newScore = new ArrayList<>();
+        for (int i = 1; i < scores.size(); i ++) {
+            newScore.add(scores.get(i));
+        }
+        double maxScore = Collections.max(newScore);
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 0; i < newScore.size(); i ++) {
+            if (maxScore == newScore.get(i)) {
+                candidates.add(i + 1);
+            }
+        }
+        int resultIndex = candidates.get(random.nextInt(candidates.size()));
+        return actions.get(resultIndex);
+    }
+
 }
