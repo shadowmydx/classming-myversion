@@ -33,6 +33,7 @@ public class ClassmingEntry {
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         Random random = new Random();
         mutateAcceptHistory.add(mutateClass);
+        mutateClass.saveCurrentClass();
         for (int i = 0; i < iterationCount; i ++) {
             System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
             MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
