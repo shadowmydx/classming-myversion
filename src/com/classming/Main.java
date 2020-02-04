@@ -19,6 +19,7 @@ public class Main {
     private static String target = "./target/";
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
+    private static final String LIMITED_STMT = ":= @parameter";
 
 
     public static String generateClassPath(List<String> newPathes) {
@@ -97,6 +98,10 @@ public class Main {
         return result;
     }
 
+    private static boolean shouldInject(String current, String next) {
+        return !next.contains(LOG_PREVIOUS) && !current.contains(LOG_PREVIOUS) && !current.contains(LIMITED_STMT);
+    }
+
     public static void injectPathCount(UnitPatchingChain units, String signature) {
         List<Stmt> targetStatements = new ArrayList<>();
         Iterator<Unit> iterator = units.snapshotIterator();
@@ -109,7 +114,7 @@ public class Main {
             if (i + 1 < targetStatements.size()) {
                 Stmt next = targetStatements.get(i + 1);
                 Stmt current = targetStatements.get(i);
-                if (!next.toString().contains(LOG_PREVIOUS) && !current.toString().contains(LOG_PREVIOUS)) {
+                if (shouldInject(current.toString(), next.toString())) {
                     SootMethod log = Scene.v().getMethod("<Print: void logPrint(java.lang.String)>");
                     StringConstant newSourceValue = StringConstant.v(signature + LOG_PREVIOUS + currentLine + " **** " + current.toString());
                     StaticInvokeExpr expr = Jimple.v().newStaticInvokeExpr(log.makeRef(), newSourceValue);
