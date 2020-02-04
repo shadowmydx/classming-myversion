@@ -73,6 +73,7 @@ public class RfFramework {
                 } else {
                     currentState.updateScore(actionString, DEAD_END);
                     mutateRejectHistory.add(newOne);
+                    currentState.setTarget(Recover.recoverFromPath(currentState.getTarget())); // because select action has changed the class
                 }
 
             } else {
