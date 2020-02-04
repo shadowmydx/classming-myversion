@@ -19,7 +19,7 @@ public class Main {
     private static String target = "./target/";
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
-    private static final String LIMITED_STMT = ":= @parameter";
+    private static final String LIMITED_STMT = ":= @";
 
 
     public static String generateClassPath(List<String> newPathes) {
