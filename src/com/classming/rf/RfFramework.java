@@ -46,7 +46,7 @@ public class RfFramework {
             String actionString = currentState.selectAction();
             Action action = actionContainer.get(actionString);
             State nextState = action.proceedAction(currentState.getTarget(), mutateAcceptHistory); // sootclass has changed here for all objects
-            MutateClass newOne = nextState.getTarget();
+            MutateClass newOne = null;
             if (actionString.equals(State.BACKTRACK)) {
                 System.out.println("backtrack here");
                 currentState = nextState;
@@ -55,7 +55,12 @@ public class RfFramework {
                 } catch (IOException e) {
                     System.out.println("should not recover failed.");
                 }
-                continue;
+                String nestActionString = currentState.selectActionWithoutBacktrack();
+                Action nestAction = RfFramework.getActionContainer().get(nestActionString);
+                nextState = nestAction.proceedAction(currentState.getTarget(), mutateAcceptHistory);
+                newOne = nextState.getTarget();
+            } else {
+                newOne = nextState.getTarget();
             }
             if (newOne != null) {
 //                MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget();
