@@ -303,6 +303,9 @@ public class Main {
         List<Stmt> allStmt = new ArrayList<>();
         while (iter.hasNext()) {
             allStmt.add((Stmt)iter.next());
+            if (allStmt.get(allStmt.size() - 1).toString().equals("goto [?= (branch)]")) {
+                units.remove(allStmt.get(allStmt.size() - 1));
+            }
             System.out.println(allStmt.get(allStmt.size() - 1));
         }
         System.out.println("===================================");
@@ -361,7 +364,7 @@ public class Main {
 //            }
 //            line ++;
 //        }
-//        outputClassFile(c);
+        outputClassFile(c);
 //        temporaryOutput(c, "./tmp", "aaa");
 //        Set<String> usedStmt1 = getExecutedLiveInstructions("com.classming.Hello", "void main(java.lang.String[])", args);
 //        List<Stmt> result1 = getActiveInstructions(usedStmt1, "com.classming.Hello", "void main(java.lang.String[])", args);

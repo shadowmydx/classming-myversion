@@ -266,7 +266,9 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop);
 
-        units.insertAfter(assign, liveCode.get(0));
+        Iterator<Unit> iter = units.snapshotIterator();
+        Stmt firstStmt = (Stmt)iter.next();
+        units.insertAfter(assign, firstStmt);
         units.insertBefore(nop, targetPoint);
         units.insertBefore(substmt, liveCode.get(hookingPoint));
         units.insertBefore(ifGoto, liveCode.get(hookingPoint));
@@ -332,7 +334,9 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, skipSwitch);
 
-        units.insertAfter(assign, liveCode.get(0));
+        Iterator<Unit> iter = units.snapshotIterator();
+        Stmt firstStmt = (Stmt)iter.next();
+        units.insertAfter(assign, firstStmt);
         units.insertBefore(substmt, liveCode.get(hookingPoint));
         units.insertBefore(ifGoto, liveCode.get(hookingPoint));
         units.insertBefore(switchStmt, liveCode.get(hookingPoint));
