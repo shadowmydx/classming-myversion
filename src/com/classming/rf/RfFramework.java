@@ -47,11 +47,16 @@ public class RfFramework {
             Action action = actionContainer.get(actionString);
             State nextState = action.proceedAction(currentState.getTarget(), mutateAcceptHistory); // sootclass has changed here for all objects
             MutateClass newOne = nextState.getTarget();
-//            if (actionString.equals(State.BACKTRACK)) {
-//                System.out.println("backtrack here");
-//                currentState = nextState;
-//                continue;
-//            }
+            if (actionString.equals(State.BACKTRACK)) {
+                System.out.println("backtrack here");
+                currentState = nextState;
+                try {
+                    Recover.recoverFromPath(currentState.getTarget());
+                } catch (IOException e) {
+                    System.out.println("should not recover failed.");
+                }
+                continue;
+            }
             if (newOne != null) {
 //                MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1).getTarget();
                 newOne.saveCurrentClass(); // because only no backtrack can trigger backup, this line ensure class is saved.

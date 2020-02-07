@@ -14,13 +14,14 @@ public class BacktrackAction implements Action{
         int selectedIndex = random.nextInt(total.size());
 //        return total.get(selectedIndex);
         State current = total.get(selectedIndex);
-        String actionString = current.selectActionWithoutBacktrack();
-        Action action = RfFramework.getActionContainer().get(actionString);
-        try {
-            Recover.recoverFromPath(current.getTarget());
-        } catch (IOException e) {
-            System.out.println("should not recover failed.");
-        }
-        return action.proceedAction(current.getTarget(), total);
+        return current;
+//        String actionString = current.selectActionWithoutBacktrack();
+//        Action action = RfFramework.getActionContainer().get(actionString);
+//        try {
+//            Recover.recoverFromPath(current.getTarget());
+//        } catch (IOException e) {
+//            System.out.println("should not recover failed.");
+//        }
+//        return action.proceedAction(current.getTarget(), total);
     }
 }

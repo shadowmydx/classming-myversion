@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 public class Main {
 
     private static boolean initial = false;
+    private static boolean vectorInitial = false;
     private static String root = "./out/production/classming/";
     private static String generated = "./sootOutput/";
     private static String target = "./target/";
@@ -100,6 +101,35 @@ public class Main {
 
     private static boolean shouldInject(String current, String next) {
         return !next.contains(LOG_PREVIOUS) && !current.contains(LOG_PREVIOUS) && !current.contains(LIMITED_STMT);
+    }
+
+    public static List<String> injectPathCountAndReturnStmt(UnitPatchingChain units, String signature) {
+        List<Stmt> targetStatements = new ArrayList<>();
+        List<String> stmtResult = new ArrayList<>();
+        Iterator<Unit> iterator = units.snapshotIterator();
+        while (iterator.hasNext()) {
+            Stmt stmt = (Stmt)iterator.next();
+            targetStatements.add(stmt);
+        }
+        int currentLine = 0;
+        for (int i = 0; i < targetStatements.size(); i ++) {
+            if (i + 1 < targetStatements.size()) {
+                Stmt next = targetStatements.get(i + 1);
+                Stmt current = targetStatements.get(i);
+                if (shouldInject(current.toString(), next.toString())) {
+                    stmtResult.add(current.toString());
+                    SootMethod log = Scene.v().getMethod("<Print: void logPrint(java.lang.String)>");
+                    StringConstant newSourceValue = StringConstant.v(signature + LOG_PREVIOUS + currentLine + " **** " + current.toString());
+                    StaticInvokeExpr expr = Jimple.v().newStaticInvokeExpr(log.makeRef(), newSourceValue);
+//                    expr.setArg(1, newSourceValue);
+                    units.insertAfter(Jimple.v().newInvokeStmt(expr), current);
+                }
+                if (!current.toString().contains(LOG_PREVIOUS)) {
+                    currentLine ++;
+                }
+            }
+        }
+        return stmtResult;
     }
 
     public static void injectPathCount(UnitPatchingChain units, String signature) {
@@ -216,6 +246,21 @@ public class Main {
             }
         }
         return activeJimpleInstructions;
+    }
+
+    public static SootClass loadTargetClassVector(String className) {
+        SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+//        c.setResolvingLevel(0);
+        List<SootMethod> d = c.getMethods();
+        for (SootMethod method : d) {
+            Body body = method.retrieveActiveBody();
+            UnitPatchingChain units = body.getUnits();
+            if (!vectorInitial) {
+                List<String> originalStmt = injectPathCountAndReturnStmt(units, method.getSignature());
+            }
+        }
+        vectorInitial = true;
+        return c;
     }
 
     public static SootClass loadTargetClass(String className) {
