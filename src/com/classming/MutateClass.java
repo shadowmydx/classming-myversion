@@ -268,7 +268,7 @@ public class MutateClass {
 
         Iterator<Unit> iter = units.snapshotIterator();
         Stmt firstStmt = (Stmt)iter.next();
-        units.insertAfter(assign, firstStmt);
+        units.insertBefore(assign, firstStmt);
         units.insertBefore(nop, targetPoint);
         units.insertBefore(substmt, liveCode.get(hookingPoint));
         units.insertBefore(ifGoto, liveCode.get(hookingPoint));
@@ -336,7 +336,7 @@ public class MutateClass {
 
         Iterator<Unit> iter = units.snapshotIterator();
         Stmt firstStmt = (Stmt)iter.next();
-        units.insertAfter(assign, firstStmt);
+        units.insertBefore(assign, firstStmt);
         units.insertBefore(substmt, liveCode.get(hookingPoint));
         units.insertBefore(ifGoto, liveCode.get(hookingPoint));
         units.insertBefore(switchStmt, liveCode.get(hookingPoint));
