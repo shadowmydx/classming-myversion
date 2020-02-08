@@ -25,7 +25,13 @@ public class ClassmingEntry {
         return null;
     }
 
-    public static void process(String className, int iterationCount, String[] args) throws IOException {
+    public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+        if(classPath!=null && !classPath.equals("")){
+            Main.setGenerated(classPath);
+        }
+        if(dependencies!=null && !dependencies.equals("")){
+            Main.setDependencies(dependencies);
+        }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
         mutateClass.initialize(className, args);
@@ -77,7 +83,11 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 500, args);
+//        process("com.classming.Hello", 500, args, null, "");
+        process("avrora.Main", 500, new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"}, "./sootOutput/avrora-cvs-20091224/",null);
+//        process("net.sourceforge.pmd.PMD", 500, new String[]{"./src","text", "unusedcode"}, "./sootOutput/pmd-4.2.5/", "dependencies/jaxen-1.1.1.jar;dependencies/asm-3.1.jar");
+//        process("org.sunflow.Benchmark", 500, args, "./sootOutput/sunflow-0.07.2/", "dependencies/janino-2.5.15.jar");
+//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 100, args, "./sootOutput/eclipse/", null); // no arguments?
     }
 
 

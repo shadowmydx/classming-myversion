@@ -323,8 +323,13 @@ public class MutateClass {
         for (int i = 0; i < caseNum; i++){
             lookUpValues.add(IntConstant.v(--gotoVarCountCopy));
             Stmt tempTargetPoint = selectTargetPoints(signature);
+            int selectTimes = 0;
             while(selectedTargetPoints.contains(tempTargetPoint)){  // make sure target is different
+                if (selectTimes>=5){
+                    break;
+                }
                 tempTargetPoint = selectTargetPoints(signature);
+                selectTimes++;
             }
             selectedTargetPoints.add(tempTargetPoint);
             Stmt nop = Jimple.v().newNopStmt();
@@ -332,8 +337,13 @@ public class MutateClass {
             labels.add(nop);
         }
         Stmt defaultTargetPoint = selectTargetPoints(signature);
+        int selectTimes = 0;
         while(selectedTargetPoints.contains(defaultTargetPoint)){  // make sure target is different
+            if (selectTimes>=5){
+                break;
+            }
             defaultTargetPoint = selectTargetPoints(signature);
+            selectTimes++;
         }
         Stmt defaultNop = Jimple.v().newNopStmt();
         units.insertBefore(defaultNop, defaultTargetPoint);

@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.9
+Created-By: 1.6.0_65-b14-468 (Apple Inc.)
+Implementation-Title: Batik all-in-one JAR
+Implementation-Version: 1.7beta1+r522399
+Implementation-Vendor: The Apache Software Foundation (http://xmlgraph
+ ics.apache.org/batik/)
+Build-Id: 20180113-174430-EST (steveb [Mac OS X 10.12.6 x86_64, Java 1
+ .6.0_65-b14-468])
+Main-Class: org.apache.batik.apps.svgbrowser.Main
+
