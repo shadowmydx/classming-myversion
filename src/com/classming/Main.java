@@ -77,22 +77,22 @@ public class Main {
         Iterator iter = units.snapshotIterator();
         Set<String> result = new HashSet<>();
         while (iter.hasNext()) {
-            String stmt = iter.next().toString();
-            result.add(stmt.contains(LOG_PREVIOUS) ? null : stmt);
+            Stmt stmt = (Stmt)iter.next();
+            result.add(stmt.toString().contains(LOG_PREVIOUS) ? (units.getPredOf(stmt)).toString() : null);
         }
         return result;
     }
 
 
-    public static List<Stmt> getAllStatementsList(SootMethod method) {
+    public static List<Stmt> getAllStatementsList(SootMethod method) { // original stmt!!! no insert stmt!
         Body body = method.retrieveActiveBody();
         UnitPatchingChain units = body.getUnits();
         Iterator iter = units.snapshotIterator();
         List<Stmt> result = new ArrayList<>();
         while (iter.hasNext()) {
             Stmt stmt = (Stmt)iter.next();
-            if (!stmt.toString().contains(LOG_PREVIOUS)) {
-                result.add(stmt);
+            if (stmt.toString().contains(LOG_PREVIOUS)) {
+                result.add((Stmt) (units.getPredOf(stmt)));
             }
 //            result.add(stmt.toString().contains(LOG_PREVIOUS) ? null : stmt);
         }
@@ -239,12 +239,20 @@ public class Main {
         Body body = mainMethod.retrieveActiveBody();
         UnitPatchingChain units = body.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
+        Map<String, String> mapping = new HashMap<>();
         while (iter.hasNext()) {
             Stmt current = (Stmt)iter.next();
-            if (usedStmt.contains(current.toString())) {
-                activeJimpleInstructions.add(current);
+            if (current.toString().contains(LOG_PREVIOUS)) { // because soot will rename variable
+                String[] elements = current.toString().split("[*]+");
+                String currentStmt = elements[3].trim().replace("\\", "");
+                currentStmt = currentStmt.substring(0, currentStmt.length() - 2);
+                if (usedStmt.contains(currentStmt)) {
+                    mapping.put(current.toString(), currentStmt);
+                    activeJimpleInstructions.add((Stmt) (units.getPredOf(current)));
+                }
             }
         }
+        UsedStatementHelper.addMethodStringToStmt(signature, mapping);
         return activeJimpleInstructions;
     }
 
@@ -287,7 +295,8 @@ public class Main {
         for (SootMethod method: d) {
             method.retrieveActiveBody();
         }
-        SootMethod test = d.get(1);
+        SootMethod test = d.get(3);
+        System.out.println(test.getSignature());
         Body body = test.getActiveBody();
         UnitPatchingChain units = body.getUnits();
 
@@ -303,7 +312,7 @@ public class Main {
         List<Stmt> allStmt = new ArrayList<>();
         while (iter.hasNext()) {
             allStmt.add((Stmt)iter.next());
-            if (allStmt.get(allStmt.size() - 1).toString().equals("goto [?= (branch)]")) {
+            if (allStmt.get(allStmt.size() - 1).toString().equals("goto [?= i0 = i0 + -1]")) {
                 units.remove(allStmt.get(allStmt.size() - 1));
             }
             System.out.println(allStmt.get(allStmt.size() - 1));

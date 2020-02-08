@@ -6,6 +6,7 @@ import soot.jimple.internal.JLookupSwitchStmt;
 
 import javax.naming.Name;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.*;
 
 
@@ -41,15 +42,27 @@ public class MutateClass {
 //            methodOriginalQuery.put(method.getSignature(), Main.getAllStatementsSet(method)); // for tp selection: all stmts
             methodOriginalStmtList.put(method.getSignature(), Main.getAllStatementsList(method));
             methodMap.put(method.getSignature(), method);
-            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs);
-            methodLiveQuery.put(method.getSignature(), usedStmt);
+            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs); // usedStmt is stdout string
+            List<Stmt> liveStmt = Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs);
+            methodLiveQuery.put(method.getSignature(), changeListToSet(liveStmt));
             UsedStatementHelper.addClassMethodUsedStmt(className, method.getSignature(), usedStmt);
-            methodLiveCode.put(method.getSignature(), Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs));
+            methodLiveCode.put(method.getSignature(), liveStmt);
             int callCount = previousMutationCounter == null ? 1 : previousMutationCounter.get(counter++).getCount();
             mutationCounter.add(new MethodCounter(method.getSignature(), callCount));
         }
         transformStmtToString(methodOriginalStmtList, methodOriginalStmtStringList);
         transformStmtToString(methodLiveCode, methodLiveCodeString);
+    }
+
+    private Set<String> changeListToSet(List target) {
+        if (target == null) {
+            return null;
+        }
+        Set<String> result = new HashSet<>();
+        for (Object object: target) {
+            result.add(object.toString());
+        }
+        return result;
     }
 
     public List<Stmt> getMethodLiveCode(String signature) {
@@ -72,7 +85,7 @@ public class MutateClass {
             this.gotoMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
 //            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
 //            Iterator iter = units.snapshotIterator();
 //            System.err.println("===============================================================");
@@ -94,7 +107,7 @@ public class MutateClass {
             this.returnMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
 //            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
 //            Iterator iter = units.snapshotIterator();
 //            System.err.println("===============================================================");
@@ -116,7 +129,7 @@ public class MutateClass {
             this.lookUpSwitchMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
 //            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
 //            Iterator iter = units.snapshotIterator();
 //            System.err.println("===============================================================");
@@ -266,18 +279,19 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop);
 
-        Iterator<Unit> iter = units.snapshotIterator();
-        Stmt firstStmt = (Stmt)iter.next();
-        units.insertBefore(assign, firstStmt);
-        units.insertBefore(nop, targetPoint);
-        units.insertBefore(substmt, liveCode.get(hookingPoint));
-        units.insertBefore(ifGoto, liveCode.get(hookingPoint));
+//        Iterator<Unit> iter = units.snapshotIterator();
+//        Stmt firstStmt = (Stmt)iter.next();
+        units.insertBefore(assign, liveCode.get(0));
+        units.insertBeforeNoRedirect(nop, targetPoint);
+        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
+        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
 
 
 
     }
     
     public void returnMutation(String signature) throws IOException {
+        System.out.println("one round start in return.================================================================================");
         List<Stmt> liveCode = methodLiveCode.get(signature);
         int hookingPoint = this.selectHookingPoint(signature, 2);
         Body body = this.methodLiveBody.get(signature);
@@ -334,15 +348,16 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, skipSwitch);
 
-        Iterator<Unit> iter = units.snapshotIterator();
-        Stmt firstStmt = (Stmt)iter.next();
-        units.insertBefore(assign, firstStmt);
-        units.insertBefore(substmt, liveCode.get(hookingPoint));
-        units.insertBefore(ifGoto, liveCode.get(hookingPoint));
-        units.insertBefore(switchStmt, liveCode.get(hookingPoint));
-        units.insertBefore(skipSwitch, liveCode.get(hookingPoint));
+//        Iterator<Unit> iter = units.snapshotIterator();
+//        Stmt firstStmt = (Stmt)iter.next();
+        units.insertBefore(assign, liveCode.get(0));
+        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
+        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
+        units.insertBeforeNoRedirect(switchStmt, liveCode.get(hookingPoint));
+        units.insertBeforeNoRedirect(skipSwitch, liveCode.get(hookingPoint));
 
     }
+
 
     private void liveCodeSetHelper(int start, int end, Set<String> dictionary, Set<String> target, List<Stmt> targetStmt) {
         for (int i = start; i < end; i++) {
