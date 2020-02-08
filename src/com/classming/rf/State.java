@@ -15,6 +15,30 @@ public class State {
     public static final String LOOK_UP = "lookup";
     public static final String RETURN = "return";
 
+    public Map<String, Integer> getMappingToIndex() {
+        return mappingToIndex;
+    }
+
+    public void setMappingToIndex(Map<String, Integer> mappingToIndex) {
+        this.mappingToIndex = mappingToIndex;
+    }
+
+    public List<String> getActions() {
+        return actions;
+    }
+
+    public void setActions(List<String> actions) {
+        this.actions = actions;
+    }
+
+    public List<Double> getScores() {
+        return scores;
+    }
+
+    public void setScores(List<Double> scores) {
+        this.scores = scores;
+    }
+
     State() {
         mappingToIndex.put(BACKTRACK, 0);
         actions.add(BACKTRACK);
