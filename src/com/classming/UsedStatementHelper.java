@@ -1,12 +1,12 @@
 package com.classming;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import soot.jimple.Stmt;
+
+import java.util.*;
 
 public class UsedStatementHelper {
     public static Map<String, Map<String, Set<String>>> classMethodUsedStmt = new HashMap<>();
+    private static Map<String, Map<String, String>> classMethodStringToStmt = new HashMap<>(); // mapping soot string stmt to stdout string stmt
 
     public static void addClassMethodUsedStmt(String className, String signature, Set<String> usedStmt) {
         if (!classMethodUsedStmt.containsKey(className)) {
@@ -20,9 +20,14 @@ public class UsedStatementHelper {
         stmts.addAll(usedStmt);
     }
 
+    public static void addMethodStringToStmt(String signature, Map<String, String> mapping) {
+        classMethodStringToStmt.put(signature, mapping);
+    }
+
     public static boolean queryIfHasInstructionsAlready(String className, String signature, String statement) {
+        String realStatement = classMethodStringToStmt.get(signature).get(statement);
         if (classMethodUsedStmt.containsKey(className)) {
-            return classMethodUsedStmt.get(className).get(signature).contains(statement);
+            return classMethodUsedStmt.get(className).get(signature).contains(realStatement);
         }
         return false;
     }

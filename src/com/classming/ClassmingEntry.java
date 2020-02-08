@@ -11,6 +11,20 @@ import java.util.Random;
 
 public class ClassmingEntry {
 
+    public static MutateClass randomMutation(MutateClass target) throws IOException {
+        Random random = new Random();
+        int randomAction = random.nextInt(3);
+        switch (randomAction) {
+            case 0:
+                return target.iteration();
+            case 1:
+                return target.lookUpSwitchIteration();
+            case 2:
+                return target.returnIteration();
+        }
+        return null;
+    }
+
     public static void process(String className, int iterationCount, String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
@@ -19,8 +33,10 @@ public class ClassmingEntry {
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         Random random = new Random();
         mutateAcceptHistory.add(mutateClass);
+        mutateClass.saveCurrentClass();
         for (int i = 0; i < iterationCount; i ++) {
-            MutateClass newOne = mutateClass.iteration(); // sootclass has changed here for all objects.
+            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+            MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
                 MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1);
                 MethodCounter current = newOne.getCurrentMethod();
@@ -29,7 +45,7 @@ public class ClassmingEntry {
                 double covScore = calculateCovScore(newOne);
                 double rand = random.nextDouble();
                 System.out.println(covScore);
-                double fitnessScore = fitness(calculateCovScore(mutateClass), currentLiveCode.size(), originalCode.size());
+                double fitnessScore = fitness(calculateCovScore(mutateClass), covScore, originalCode.size());
                 if(rand < fitnessScore) {
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
@@ -40,19 +56,19 @@ public class ClassmingEntry {
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                System.out.println(mutateClass.getBackPath());
+//                System.out.println(mutateClass.getBackPath());
             }
         }
 
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
     }
 
-    private static double fitness(double previousCov, double currentCov, int total) {
+    public static double fitness(double previousCov, double currentCov, int total) {
         double result = Math.exp(0.08 * total * (previousCov - currentCov));
         return 1.0 < result ? 1.0 : result;
     }
 
-    private static double calculateCovScore(MutateClass mutateClass) {
+    public static double calculateCovScore(MutateClass mutateClass) {
         MethodCounter current = mutateClass.getCurrentMethod();
         List<String> currentLiveCode = mutateClass.getMethodLiveCodeString(current.getSignature());
         List<String> originalCode = mutateClass.getMethodOriginalStmtListString(current.getSignature());
@@ -61,7 +77,7 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 10, args);
+        process("com.classming.Hello", 500, args);
     }
 
 
