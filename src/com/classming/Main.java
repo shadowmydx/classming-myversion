@@ -17,11 +17,27 @@ public class Main {
     private static boolean vectorInitial = false;
     private static String root = "./out/production/classming/";
     private static String generated = "./sootOutput/";
+    private static String dependencies = "";
     private static String target = "./target/";
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
     private static final String LIMITED_STMT = ":= @";
 
+    public static String getGenerated() {
+        return generated;
+    }
+
+    public static void setGenerated(String generated) {
+        Main.generated = generated;
+    }
+
+    public static String getDependencies() {
+        return dependencies;
+    }
+
+    public static void setDependencies(String dependencies) {
+        Main.dependencies = dependencies;
+    }
 
     public static String generateClassPath(List<String> newPathes) {
         String pathSep = File.pathSeparator;
@@ -51,6 +67,7 @@ public class Main {
 
     public static void outputClassFile(SootClass sClass) throws IOException {
         String fileName = SourceLocator.v().getFileNameFor(sClass, Options.output_format_class);
+        fileName = fileName.replace("sootOutput\\", Main.getGenerated());
         File file = new File(fileName);
         String path = file.getParent();
         File folder = new File(path);
@@ -163,7 +180,7 @@ public class Main {
 //        pathes.add(root);
         pathes.add(generated);
 //        pathes.add(target);
-        Options.v().parse(args);
+//        Options.v().parse(args);
         Options.v().set_soot_classpath(generateClassPath(pathes));
         Scene.v().loadNecessaryClasses();
 
@@ -177,7 +194,7 @@ public class Main {
 
     public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -classpath \"" + generated + "\" " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath \"" + generated + "\" " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
