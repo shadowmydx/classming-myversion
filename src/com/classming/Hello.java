@@ -44,6 +44,13 @@ public class Hello {
     }
 
     public static void print(String target) {
+        int sum = 0;
+        for (int i = 0; i < 100; i ++) {
+            sum += i;
+        }
+        if (sum == 0) {
+            System.out.println("nononooooooooooooooooooooo");
+        }
         System.out.println(target);
     }
 }

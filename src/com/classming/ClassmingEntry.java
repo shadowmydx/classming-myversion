@@ -8,6 +8,7 @@ import soot.jimple.Stmt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -75,6 +76,7 @@ public class ClassmingEntry {
         }
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+        System.out.println("max is " + Collections.max(averageDistance));
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
     }
 

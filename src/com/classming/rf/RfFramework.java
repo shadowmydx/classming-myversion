@@ -4,6 +4,8 @@ import com.classming.ClassmingEntry;
 import com.classming.Main;
 import com.classming.MethodCounter;
 import com.classming.MutateClass;
+import com.classming.Vector.LevenshteinDistance;
+import com.classming.Vector.MathTool;
 import com.classming.record.Recover;
 
 import java.io.IOException;
@@ -35,6 +37,7 @@ public class RfFramework {
         mutateClass.initialize(className, args);
         List<State> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
+        List<Double> averageDistance = new ArrayList<>();
         Random random = new Random();
         State currentState = new State();
         currentState.setTarget(mutateClass);
@@ -64,6 +67,7 @@ public class RfFramework {
                 MutateClass previousClass = currentState.getTarget();
                 MethodCounter current = newOne.getCurrentMethod();
                 List<String> originalCode = previousClass.getMethodOriginalStmtListString(current.getSignature());
+                int distance = LevenshteinDistance.computeLevenshteinDistance(newOne.getMethodLiveCodeString(current.getSignature()), previousClass.getMethodLiveCodeString(current.getSignature()));
                 double covScore = ClassmingEntry.calculateCovScore(newOne);
                 double rand = random.nextDouble();
                 double fitnessScore = 0.7; // indicate big change in original code. no use now?
@@ -74,6 +78,10 @@ public class RfFramework {
                     currentState.updateScore(actionString, fitnessScore);
                     System.out.println(actionString);
                     System.out.println(covScore);
+                    System.out.println("Distance is " + distance + " signature is " + current.getSignature());
+                    ClassmingEntry.showListElement(newOne.getMethodLiveCodeString(current.getSignature()));
+                    ClassmingEntry.showListElement(previousClass.getMethodLiveCodeString(current.getSignature()));
+                    averageDistance.add(distance / 1.0);
                     mutateAcceptHistory.add(nextState);
                     currentState = nextState;
                 } else {
@@ -91,7 +99,11 @@ public class RfFramework {
 
         }
         System.out.println("Total size is : " + mutateAcceptHistory.size());
+        System.out.println("Average distance is " + MathTool.mean(averageDistance));
+        System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+        System.out.println("max is " + Collections.max(averageDistance));
         Recover.recoverFromPath(mutateAcceptHistory.get(0).getTarget());
+
     }
 
     public static void main(String[] args) throws IOException {
