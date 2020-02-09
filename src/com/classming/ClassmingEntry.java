@@ -57,7 +57,10 @@ public class ClassmingEntry {
                 double fitnessScore = fitness(calculateCovScore(mutateClass), covScore, originalCode.size());
                 if(rand < fitnessScore) {
                     System.out.println(covScore);
-                    System.out.println("Distance is " + distance);
+                    System.out.println("Distance is " + distance + " signature is " + current.getSignature());
+                    averageDistance.add(distance / 1.0);
+                    showListElement(currentLiveCode);
+                    showListElement(previousClass.getMethodLiveCodeString(current.getSignature()));
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
                 } else {
@@ -85,6 +88,14 @@ public class ClassmingEntry {
         List<String> currentLiveCode = mutateClass.getMethodLiveCodeString(current.getSignature());
         List<String> originalCode = mutateClass.getMethodOriginalStmtListString(current.getSignature());
         return currentLiveCode.size() / (double)originalCode.size();
+    }
+
+    public static void showListElement(List<String> target) {
+        StringBuilder builder = new StringBuilder();
+        for (String element: target) {
+            builder.append(element + " ");
+        }
+        System.out.println(builder);
     }
 
 

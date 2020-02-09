@@ -171,7 +171,7 @@ public class MutateClass {
         this.mutationCounter.sort(new Comparator<MethodCounter>() {
             @Override
             public int compare(MethodCounter o1, MethodCounter o2) {
-                return methodLiveCode.get(o1.getSignature()).size() / o1.getCount() - methodLiveCode.get(o2.getSignature()).size() / o2.getCount();
+                return methodLiveCode.get(o2.getSignature()).size() / o2.getCount() - methodLiveCode.get(o1.getSignature()).size() / o1.getCount();
             }
         });
     }
