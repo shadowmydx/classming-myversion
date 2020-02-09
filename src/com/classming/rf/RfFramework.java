@@ -66,14 +66,14 @@ public class RfFramework {
                 List<String> originalCode = previousClass.getMethodOriginalStmtListString(current.getSignature());
                 double covScore = ClassmingEntry.calculateCovScore(newOne);
                 double rand = random.nextDouble();
-                System.out.println(covScore);
-                double fitnessScore = 0.7; // indicate big change in original code.
+                double fitnessScore = 0.7; // indicate big change in original code. no use now?
                 if (originalCode != null) {
                     fitnessScore = ClassmingEntry.fitness(ClassmingEntry.calculateCovScore(mutateClass), covScore, originalCode.size());
                 }
                 if(rand < fitnessScore) {
                     currentState.updateScore(actionString, fitnessScore);
                     System.out.println(actionString);
+                    System.out.println(covScore);
                     mutateAcceptHistory.add(nextState);
                     currentState = nextState;
                 } else {

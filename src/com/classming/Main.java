@@ -264,8 +264,9 @@ public class Main {
                 String currentStmt = elements[3].trim().replace("\\", "");
                 currentStmt = currentStmt.substring(0, currentStmt.length() - 2);
                 if (usedStmt.contains(currentStmt)) {
-                    mapping.put(current.toString(), currentStmt);
-                    activeJimpleInstructions.add((Stmt) (units.getPredOf(current)));
+                    Stmt previous = (Stmt) (units.getPredOf(current));
+                    mapping.put(previous.toString(), currentStmt);
+                    activeJimpleInstructions.add(previous);
                 }
             }
         }

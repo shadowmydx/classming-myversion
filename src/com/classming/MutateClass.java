@@ -51,7 +51,8 @@ public class MutateClass {
             mutationCounter.add(new MethodCounter(method.getSignature(), callCount));
         }
         transformStmtToString(methodOriginalStmtList, methodOriginalStmtStringList);
-        transformStmtToString(methodLiveCode, methodLiveCodeString);
+        transformStmtToStringAdvanced(methodLiveCode, methodLiveCodeString);
+//        transformStmtToString(methodLiveCode, methodLiveCodeString); // potential bug here because doesn't map to stdout
     }
 
     private Set<String> changeListToSet(List target) {
@@ -410,6 +411,17 @@ public class MutateClass {
             List<String> currentString = new ArrayList<>();
             for (Stmt stmt: current) {
                 currentString.add(stmt.toString());
+            }
+            to.put(key, currentString);
+        }
+    }
+
+    public static void transformStmtToStringAdvanced(Map<String, List<Stmt>> from, Map<String, List<String>> to) {
+        for (String key: from.keySet()) {
+            List<Stmt> current = from.get(key);
+            List<String> currentString = new ArrayList<>();
+            for (Stmt stmt: current) {
+                currentString.add(UsedStatementHelper.getMappingStdoutStmtString(key, stmt.toString()));
             }
             to.put(key, currentString);
         }
