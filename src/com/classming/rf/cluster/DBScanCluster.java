@@ -16,8 +16,6 @@ public class DBScanCluster implements Cluster {
     public List<Double> cluster(List<State> states) {
         DBScanCluster cluster = new DBScanCluster(states);
         Map<State, Integer> clusters = cluster.cluster();
-        System.out.println(states.size());
-        System.out.println(cluster);
         Map<Integer, Integer> counter = new HashMap<>();
         List<Double> distribution = new LinkedList<>();
         for (State state : clusters.keySet()) {
@@ -87,7 +85,6 @@ public class DBScanCluster implements Cluster {
         for (Point point : points) {
             int cnt = 0;
             for (Point other : points) {
-                System.out.println(point.distanceTo(other));
                 if (point != other && point.distanceTo(other) < radius)
                     cnt++;
             }
