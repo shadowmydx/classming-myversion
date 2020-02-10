@@ -49,6 +49,10 @@ public class DBScanCluster implements Cluster {
      */
     private double radius;
 
+    public DBScanCluster() {
+
+    }
+
     public DBScanCluster(List<State> states) {
         this(states, DBScan_minPts, DBScan_radius);
     }
