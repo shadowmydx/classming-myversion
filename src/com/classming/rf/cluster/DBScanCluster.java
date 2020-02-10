@@ -2,10 +2,7 @@ package com.classming.rf.cluster;
 
 import com.classming.rf.State;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DBScanCluster implements Cluster {
 
@@ -17,7 +14,7 @@ public class DBScanCluster implements Cluster {
         DBScanCluster cluster = new DBScanCluster(states);
         Map<State, Integer> clusters = cluster.cluster();
         Map<Integer, Integer> counter = new HashMap<>();
-        List<Double> distribution = new LinkedList<>();
+        List<Double> distribution = new ArrayList<>(states.size());
         for (State state : clusters.keySet()) {
             int clusterId = clusters.get(state);
             int count = counter.getOrDefault(clusterId, 0);
