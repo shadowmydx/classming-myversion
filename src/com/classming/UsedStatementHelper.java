@@ -31,4 +31,9 @@ public class UsedStatementHelper {
         }
         return false;
     }
+
+    public static String getMappingStdoutStmtString(String signature, String original) {
+        Map<String, String> map = classMethodStringToStmt.get(signature);
+        return map.get(original);
+    }
 }
