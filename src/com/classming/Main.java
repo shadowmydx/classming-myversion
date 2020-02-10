@@ -215,6 +215,27 @@ public class Main {
         return usedStmt;
     }
 
+    public static List<String> getPureMainInstructionsFlow(String className, String[] args) throws IOException {
+        Set<String> usedStmt = new HashSet<>();
+        List<String> result = new ArrayList<>();
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath \"" + generated + "\" " + className;
+        if (args != null && args.length != 0) {
+            for (String arg: args) {
+                cmd += " " + arg + " ";
+            }
+        }
+        Process p = Runtime.getRuntime().exec(cmd);
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            if (line.contains(LOG_PREVIOUS) && !usedStmt.contains(line)) {
+                usedStmt.add(line);
+                result.add(line);
+            }
+        }
+        return result;
+    }
+
     public static List<SootMethod> getLiveMethod(Set<String> usedStmt, List<SootMethod> methods) {
         List<SootMethod> signatures = new ArrayList<>();
         Set<String> involvedMethod = new HashSet<>();
