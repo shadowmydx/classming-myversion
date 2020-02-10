@@ -1,5 +1,6 @@
 package com.classming.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LevenshteinDistance {
@@ -23,5 +24,18 @@ public class LevenshteinDistance {
                         distance[i - 1][j - 1] + ((lhs.get(i - 1).equals(rhs.get(j - 1))) ? 0 : 1));
 
         return distance[lhs.size()][rhs.size()];
+    }
+
+    public static void main(String[] args) {
+        List<String> stmt1 = new ArrayList<>();
+        List<String> stmt2 = new ArrayList<>();
+        stmt1.add("a = 1;");
+        stmt1.add("b = 1;");
+        stmt1.add("c = a + b");
+        stmt2.add("a = 1;");
+        stmt2.add("b = 2;");
+        stmt2.add("c = 0;");
+        int result = computeLevenshteinDistance(stmt1, stmt2);
+        System.out.println(result);
     }
 }
