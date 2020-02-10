@@ -31,7 +31,7 @@ public class DBScanCluster implements Cluster {
         }
         for (State state : states) {
             int id = clusters.get(state);
-            double probability = 1.0 / counter.get(id) / sum;
+            double probability = 1.0 / counter.get(id) / counter.get(id) / sum;
             distribution.add(probability);
         }
         return distribution;
