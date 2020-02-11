@@ -107,6 +107,7 @@ public class ClassmingEntry {
             System.out.print(state.getCoFitnessScore() + " ");
             score.add(state.getCoFitnessScore());
         }
+        System.out.println();
         System.out.println(MathTool.mean(score));
     }
 
@@ -132,7 +133,7 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 500, args, null, "");
+        process("com.classming.Hello", 597, args, null, "");
 //        process("avrora.Main", 500, new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"}, "./sootOutput/avrora-cvs-20091224/",null);
 //        process("net.sourceforge.pmd.PMD", 500, new String[]{"./src","text", "unusedcode"}, "./sootOutput/pmd-4.2.5/", "dependencies/jaxen-1.1.1.jar;dependencies/asm-3.1.jar");
 //        process("org.sunflow.Benchmark", 500, args, "./sootOutput/sunflow-0.07.2/", "dependencies/janino-2.5.15.jar");
