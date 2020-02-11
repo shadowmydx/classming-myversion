@@ -181,6 +181,10 @@ public class Main {
         pathes.add(generated);
 //        pathes.add(target);
 //        Options.v().parse(args);
+        String[] dependencyArr = dependencies.split("[;]");
+        for(String d: dependencyArr){
+            pathes.add(d);
+        }
         Options.v().set_soot_classpath(generateClassPath(pathes));
         Scene.v().loadNecessaryClasses();
 

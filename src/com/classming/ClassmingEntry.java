@@ -102,13 +102,38 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 500, args, null, "");
-//        process("avrora.Main", 500, new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"}, "./sootOutput/avrora-cvs-20091224/",null);
-//        process("net.sourceforge.pmd.PMD", 500, new String[]{"./src","text", "unusedcode"}, "./sootOutput/pmd-4.2.5/", "dependencies/jaxen-1.1.1.jar;dependencies/asm-3.1.jar");
-//        process("org.sunflow.Benchmark", 500, args, "./sootOutput/sunflow-0.07.2/", "dependencies/janino-2.5.15.jar");
-//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 100, args, "./sootOutput/eclipse/", null); // no arguments?
+//        process("com.classming.Hello", 500, args, null, "");
+        process("avrora.Main", 500,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
+//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 500,
+//                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+//        process("org.apache.fop.cli.Main", 500,
+//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+//                "./sootOutput/fop/",
+//                "dependencies/xmlgraphics-commons-1.3.1.jar;" +
+//                        "dependencies/commons-logging.jar;" +
+//                        "dependencies/avalon-framework-4.2.0.jar;" +
+//                        "dependencies/batik-all.jar;" +
+//                        "dependencies/commons-io-1.3.1.jar");
+//        process("org.python.util.jython", 500,
+//                new String[]{"sootOutput/jython/hello.py"},
+//                "./sootOutput/jython/",
+//                "dependencies/guava-r07.jar;" +
+//                        "dependencies/constantine.jar;" +
+//                        "dependencies/jnr-posix.jar;" +
+//                        "dependencies/jaffl.jar;" +
+//                        "dependencies/jline-0.9.95-SNAPSHOT.jar;" +
+//                        "dependencies/antlr-3.1.3.jar;" +
+//                        "dependencies/asm-3.1.jar");
+//        process("net.sourceforge.pmd.PMD", 500,
+//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+//                "./sootOutput/pmd-4.2.5/",
+//                "dependencies/jaxen-1.1.1.jar;" +
+//                        "dependencies/asm-3.1.jar");
+//        process("org.sunflow.Benchmark", 500,
+//                new String[]{"-bench","2","256"},
+//                "./sootOutput/sunflow-0.07.2/",
+//                "dependencies/janino-2.5.15.jar");
     }
-
-
-
 }
