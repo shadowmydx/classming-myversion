@@ -82,6 +82,7 @@ public class ClassmingEntry {
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
         List<State> states = new ArrayList<>();
+        List<Double> score = new ArrayList<>();
         for (MutateClass sClass: accepted) {
             State state = new State();
             state.setTarget(sClass);
@@ -101,9 +102,12 @@ public class ClassmingEntry {
                 return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
             }
         });
+        states = states.subList(0, 100);
         for (State state: states) {
             System.out.print(state.getCoFitnessScore() + " ");
+            score.add(state.getCoFitnessScore());
         }
+        System.out.println(MathTool.mean(score));
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {

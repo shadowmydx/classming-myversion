@@ -5,6 +5,7 @@ import com.classming.Main;
 import com.classming.MethodCounter;
 import com.classming.MutateClass;
 import com.classming.Vector.LevenshteinDistance;
+import com.classming.Vector.MathTool;
 import com.classming.record.Recover;
 import com.classming.rf.*;
 
@@ -100,9 +101,13 @@ public class EvolutionFramework {
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
             }
         }
+        List<Double> totalScore = new ArrayList<>();
         for (State state: mutateAcceptHistory) {
             System.out.print(state.getCoFitnessScore() + " ");
+            totalScore.add(state.getCoFitnessScore());
         }
+        System.out.println();
+        System.out.println(MathTool.mean(totalScore));
     }
 
     public static void main(String[] args) throws IOException {
