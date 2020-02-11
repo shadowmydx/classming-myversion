@@ -35,7 +35,7 @@ public class EvolutionFramework {
         actionContainer.put(State.GOTO, gotoAction);
     }
 
-    public void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies) throws IOException {
         if(classPath != null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -53,8 +53,8 @@ public class EvolutionFramework {
         startState.setTarget(mutateClass);
         mutateClass.saveCurrentClass(); // in case 1st backtrack no backup
         mutateAcceptHistory.add(startState);
-        for (int i = 0; i < iterationCount; i ++) {
-            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+        int iterationCount = 0;
+        while (iterationCount < iterationLimit) {
             int currentSize = mutateAcceptHistory.size();
             for (int j = 0; j < currentSize; j ++) {
                 State current = mutateAcceptHistory.get(j);
@@ -62,8 +62,10 @@ public class EvolutionFramework {
                 String nextActionString = current.selectActionWithoutBacktrack();
                 Action nextAction = EvolutionFramework.getActionContainer().get(nextActionString);
                 State nextState = nextAction.proceedAction(current.getTarget(), mutateAcceptHistory);
+                iterationCount ++;
                 MutateClass newOne = nextState.getTarget();
                 if (newOne != null) {
+                    System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + iterationCount);
                     MethodCounter currentCounter = newOne.getCurrentMethod();
                     int distance = LevenshteinDistance.computeLevenshteinDistance(current.getTarget().getClassPureInstructionFlow(), newOne.getClassPureInstructionFlow());
                     System.out.println("Distance is " + distance + " signature is " + currentCounter.getSignature());
@@ -92,7 +94,7 @@ public class EvolutionFramework {
                     }
                 });
                 for (int j = POPULATION_LIMIT; j < mutateAcceptHistory.size(); j ++) {
-                    mutateRejectHistory.add(mutateAcceptHistory.get(i));
+                    mutateRejectHistory.add(mutateAcceptHistory.get(j));
                 }
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
             }
