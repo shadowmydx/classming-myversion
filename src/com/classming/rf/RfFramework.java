@@ -13,10 +13,10 @@ import java.util.*;
 
 public class RfFramework {
     public static final double ALPHA = .2;
-    private static GotoAction gotoAction = new GotoAction();
-    private static LookupAction lookupAction = new LookupAction();
-    private static ReturnAction returnAction = new ReturnAction();
-    private static BacktrackAction backtrackAction = new BacktrackAction();
+    private static Action gotoAction = new GotoAction();
+    private static Action lookupAction = new LookupAction();
+    private static Action returnAction = new ReturnAction();
+    private static Action backtrackAction = new BacktrackAction();
     private static final int DEAD_END = -1;
     private static Map<String, Action> actionContainer = new HashMap<>();
     static {

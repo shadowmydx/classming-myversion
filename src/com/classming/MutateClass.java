@@ -19,6 +19,16 @@ public class MutateClass {
     private static int gotoVarCount = 1;
     private static int loopLimit = 5;
 
+    public List<String> getClassPureInstructionFlow() {
+        return classPureInstructionFlow;
+    }
+
+    public void setClassPureInstructionFlow(List<String> classPureInstructionFlow) {
+        this.classPureInstructionFlow = classPureInstructionFlow;
+    }
+
+    private List<String> classPureInstructionFlow;
+
     public SootClass getSootClass() {
         return sootClass;
     }
@@ -35,6 +45,7 @@ public class MutateClass {
         for (SootMethod method : this.sootClass.getMethods()) {
             this.methodLiveBody.put(method.getSignature(), method.retrieveActiveBody());
         }
+        this.classPureInstructionFlow = Main.getPureMainInstructionsFlow(className, activeArgs);
         this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, activeArgs);
         this.liveMethod = Main.getLiveMethod(this.mainLiveStmt, this.sootClass.getMethods());
         int counter = 0;
