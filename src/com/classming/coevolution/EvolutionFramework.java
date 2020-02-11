@@ -65,7 +65,8 @@ public class EvolutionFramework {
                 iterationCount ++;
                 MutateClass newOne = nextState.getTarget();
                 if (newOne != null) {
-                    System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + iterationCount);
+                    int totalSize = mutateAcceptHistory.size() + mutateRejectHistory.size();
+                    System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount);
                     MethodCounter currentCounter = newOne.getCurrentMethod();
                     int distance = LevenshteinDistance.computeLevenshteinDistance(current.getTarget().getClassPureInstructionFlow(), newOne.getClassPureInstructionFlow());
                     System.out.println("Distance is " + distance + " signature is " + currentCounter.getSignature());
