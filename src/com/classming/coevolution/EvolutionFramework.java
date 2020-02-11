@@ -112,7 +112,7 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        fwk.process("com.classming.Hello", 500, args, null, "");
+        fwk.process("com.classming.Hello", 2000, args, null, "");
     }
 
 }

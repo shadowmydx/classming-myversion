@@ -44,7 +44,7 @@ public class RfFramework {
         mutateClass.saveCurrentClass(); // in case 1st backtrack no backup
         mutateAcceptHistory.add(currentState);
         for (int i = 0; i < iterationCount; i ++) {
-            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+            System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
 //            MutateClass newOne = mutateClass.iteration(); // sootclass has changed here for all objects.
             String actionString = currentState.selectAction();
             Action action = actionContainer.get(actionString);
