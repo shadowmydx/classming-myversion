@@ -64,6 +64,7 @@ public class ClassmingEntry {
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
                 } else {
+                    newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
                 }
@@ -134,7 +135,7 @@ public class ClassmingEntry {
 
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 2083, args, null, "");
+        process("com.classming.Hello", 2058, args, null, "");
 //        process("avrora.Main", 500, new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"}, "./sootOutput/avrora-cvs-20091224/",null);
 //        process("net.sourceforge.pmd.PMD", 500, new String[]{"./src","text", "unusedcode"}, "./sootOutput/pmd-4.2.5/", "dependencies/jaxen-1.1.1.jar;dependencies/asm-3.1.jar");
 //        process("org.sunflow.Benchmark", 500, args, "./sootOutput/sunflow-0.07.2/", "dependencies/janino-2.5.15.jar");
