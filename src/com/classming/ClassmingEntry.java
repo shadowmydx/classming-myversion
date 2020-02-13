@@ -7,9 +7,16 @@ import com.classming.record.Recover;
 import com.classming.rf.State;
 import soot.jimple.Stmt;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 
 public class ClassmingEntry {
 
@@ -80,6 +87,39 @@ public class ClassmingEntry {
         System.out.println("max is " + Collections.max(averageDistance));
         calculateAverageDistance(mutateAcceptHistory);
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
+        dumpAcceptHistory(mutateAcceptHistory);
+        dumpRejectHistory(mutateRejectHistory);
+    }
+
+    public static void calculateAverageDistance(List<MutateClass> accepted) {
+        List<State> states = new ArrayList<>();
+        List<Double> score = new ArrayList<>();
+        for (MutateClass sClass: accepted) {
+            State state = new State();
+            state.setTarget(sClass);
+            states.add(state);
+        }
+        for (State state: states) {
+            state.setCoFitnessScore(Fitness.fitness(state, states));
+        }
+        states.sort(new Comparator<State>() {
+            @Override
+            public int compare(State o1, State o2) {
+                double scoreOne = o1.getCoFitnessScore();
+                double scoreTwo = o2.getCoFitnessScore();
+                if (Math.abs(scoreOne - scoreTwo) < .00001) {
+                    return 0;
+                }
+                return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
+            }
+        });
+        states = states.subList(0, 100);
+        for (State state: states) {
+            System.out.print(state.getCoFitnessScore() + " ");
+            score.add(state.getCoFitnessScore());
+        }
+        System.out.println();
+        System.out.println(MathTool.mean(score));
     }
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
@@ -134,14 +174,72 @@ public class ClassmingEntry {
     }
 
 
-    public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 2058, args, null, "");
-//        process("avrora.Main", 500, new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"}, "./sootOutput/avrora-cvs-20091224/",null);
-//        process("net.sourceforge.pmd.PMD", 500, new String[]{"./src","text", "unusedcode"}, "./sootOutput/pmd-4.2.5/", "dependencies/jaxen-1.1.1.jar;dependencies/asm-3.1.jar");
-//        process("org.sunflow.Benchmark", 500, args, "./sootOutput/sunflow-0.07.2/", "dependencies/janino-2.5.15.jar");
-//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 100, args, "./sootOutput/eclipse/", null); // no arguments?
+    public static void dumpAcceptHistory(List<MutateClass> list){
+        File file = new File("AcceptHistory");
+        if (!file.exists()) { file.mkdirs(); }
+        // The first one is not mutant
+        for (int i = 1; i < list.size(); i++){
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/")+".class");
+            try{
+                Files.copy(source.toPath(), dest.toPath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+
+
+
+    public static void dumpRejectHistory(List<MutateClass> list){
+        File file = new File("RejectHistory");
+        if (!file.exists()) { file.mkdirs(); }
+        for (int i = 0; i < list.size(); i++){
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/")+".class");
+            try{
+                Files.copy(source.toPath(), dest.toPath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
-
-
+    public static void main(String[] args) throws IOException {
+//        process("com.classming.Hello", 500, args, null, "");
+        process("avrora.Main", 500,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
+//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 500,
+//                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+//        process("org.apache.fop.cli.Main", 500,
+//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+//                "./sootOutput/fop/",
+//                "dependencies/xmlgraphics-commons-1.3.1.jar;" +
+//                        "dependencies/commons-logging.jar;" +
+//                        "dependencies/avalon-framework-4.2.0.jar;" +
+//                        "dependencies/batik-all.jar;" +
+//                        "dependencies/commons-io-1.3.1.jar");
+//        process("org.python.util.jython", 500,
+//                new String[]{"sootOutput/jython/hello.py"},
+//                "./sootOutput/jython/",
+//                "dependencies/guava-r07.jar;" +
+//                        "dependencies/constantine.jar;" +
+//                        "dependencies/jnr-posix.jar;" +
+//                        "dependencies/jaffl.jar;" +
+//                        "dependencies/jline-0.9.95-SNAPSHOT.jar;" +
+//                        "dependencies/antlr-3.1.3.jar;" +
+//                        "dependencies/asm-3.1.jar");
+//        process("net.sourceforge.pmd.PMD", 500,
+//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+//                "./sootOutput/pmd-4.2.5/",
+//                "dependencies/jaxen-1.1.1.jar;" +
+//                        "dependencies/asm-3.1.jar");
+//        process("org.sunflow.Benchmark", 500,
+//                new String[]{"-bench","2","256"},
+//                "./sootOutput/sunflow-0.07.2/",
+//                "dependencies/janino-2.5.15.jar");
+    }
 }

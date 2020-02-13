@@ -2,4 +2,7 @@
 /nolivecode/*
 /tmp/*
 /.idea/*
+/.vscode/*
+/AcceptHistory/*
+/RejectHistory/*
 classming.iml
