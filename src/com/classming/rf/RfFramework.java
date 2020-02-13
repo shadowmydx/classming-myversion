@@ -13,10 +13,10 @@ import java.util.*;
 
 public class RfFramework {
     public static final double ALPHA = .2;
-    private static GotoAction gotoAction = new GotoAction();
-    private static LookupAction lookupAction = new LookupAction();
-    private static ReturnAction returnAction = new ReturnAction();
-    private static BacktrackAction backtrackAction = new BacktrackAction();
+    private static Action gotoAction = new GotoAction();
+    private static Action lookupAction = new LookupAction();
+    private static Action returnAction = new ReturnAction();
+    private static Action backtrackAction = new BacktrackAction();
     private static final int DEAD_END = -1;
     private static Map<String, Action> actionContainer = new HashMap<>();
     static {
@@ -44,7 +44,7 @@ public class RfFramework {
         mutateClass.saveCurrentClass(); // in case 1st backtrack no backup
         mutateAcceptHistory.add(currentState);
         for (int i = 0; i < iterationCount; i ++) {
-            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+            System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
 //            MutateClass newOne = mutateClass.iteration(); // sootclass has changed here for all objects.
             String actionString = currentState.selectAction();
             Action action = actionContainer.get(actionString);
