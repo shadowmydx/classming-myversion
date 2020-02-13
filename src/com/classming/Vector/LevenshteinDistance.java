@@ -35,6 +35,7 @@ public class LevenshteinDistance {
         stmt2.add("a = 1;");
         stmt2.add("b = 2;");
         stmt2.add("c = 0;");
+        System.out.println(stmt1.subList(0, 3).size());
         int result = computeLevenshteinDistance(stmt1, stmt2);
         System.out.println(result);
     }
