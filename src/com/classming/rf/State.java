@@ -9,6 +9,18 @@ public class State {
     private Map<String, Integer> mappingToIndex = new HashMap<>();
     private List<String> actions = new ArrayList<>();
     private List<Double> scores = new ArrayList<>();
+
+
+    public double getCoFitnessScore() {
+        return coFitnessScore;
+    }
+
+    public void setCoFitnessScore(double coFitnessScore) {
+        this.coFitnessScore = coFitnessScore;
+    }
+
+    private double coFitnessScore;
+
     private static double exploreRate = 0.1;
     public static final String GOTO = "goto";
     public static final String BACKTRACK = "backtrack";
@@ -39,7 +51,7 @@ public class State {
         this.scores = scores;
     }
 
-    State() {
+    public State() {
         mappingToIndex.put(BACKTRACK, 0);
         actions.add(BACKTRACK);
         mappingToIndex.put(GOTO, 1);

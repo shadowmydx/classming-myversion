@@ -2,7 +2,9 @@ package com.classming;
 
 import com.classming.Vector.LevenshteinDistance;
 import com.classming.Vector.MathTool;
+import com.classming.coevolution.Fitness;
 import com.classming.record.Recover;
+import com.classming.rf.State;
 import soot.jimple.Stmt;
 
 import java.io.File;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.*;
 
 public class ClassmingEntry {
 
@@ -47,7 +50,7 @@ public class ClassmingEntry {
         mutateAcceptHistory.add(mutateClass);
         mutateClass.saveCurrentClass();
         for (int i = 0; i < iterationCount; i ++) {
-            System.out.println("Current size is : " + mutateAcceptHistory.size() + ", iteration is :" + i);
+            System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
             MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
                 MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1);
@@ -77,12 +80,45 @@ public class ClassmingEntry {
 //                System.out.println(mutateClass.getBackPath());
             }
         }
+        System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
+        calculateAverageDistance(mutateAcceptHistory);
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
         dumpAcceptHistory(mutateAcceptHistory);
         dumpRejectHistory(mutateRejectHistory);
+    }
+
+    public static void calculateAverageDistance(List<MutateClass> accepted) {
+        List<State> states = new ArrayList<>();
+        List<Double> score = new ArrayList<>();
+        for (MutateClass sClass: accepted) {
+            State state = new State();
+            state.setTarget(sClass);
+            states.add(state);
+        }
+        for (State state: states) {
+            state.setCoFitnessScore(Fitness.fitness(state, states));
+        }
+        states.sort(new Comparator<State>() {
+            @Override
+            public int compare(State o1, State o2) {
+                double scoreOne = o1.getCoFitnessScore();
+                double scoreTwo = o2.getCoFitnessScore();
+                if (Math.abs(scoreOne - scoreTwo) < .00001) {
+                    return 0;
+                }
+                return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
+            }
+        });
+        states = states.subList(0, 100);
+        for (State state: states) {
+            System.out.print(state.getCoFitnessScore() + " ");
+            score.add(state.getCoFitnessScore());
+        }
+        System.out.println();
+        System.out.println(MathTool.mean(score));
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {
