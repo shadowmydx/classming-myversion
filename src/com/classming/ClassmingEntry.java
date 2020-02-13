@@ -5,8 +5,10 @@ import com.classming.Vector.MathTool;
 import com.classming.record.Recover;
 import soot.jimple.Stmt;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -65,6 +67,7 @@ public class ClassmingEntry {
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
                 } else {
+                    newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
                 }
@@ -78,6 +81,8 @@ public class ClassmingEntry {
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
+        dumpAcceptHistory(mutateAcceptHistory);
+        dumpRejectHistory(mutateRejectHistory);
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {
@@ -100,6 +105,36 @@ public class ClassmingEntry {
         System.out.println(builder);
     }
 
+    public static void dumpAcceptHistory(List<MutateClass> list){
+        File file = new File("AcceptHistory");
+        if (!file.exists()) { file.mkdirs(); }
+        // The first one is not mutant
+        for (int i = 1; i < list.size(); i++){
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/")+".class");
+            try{
+                Files.copy(source.toPath(), dest.toPath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void dumpRejectHistory(List<MutateClass> list){
+        File file = new File("RejectHistory");
+        if (!file.exists()) { file.mkdirs(); }
+        for (int i = 0; i < list.size(); i++){
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/")+".class");
+            try{
+                Files.copy(source.toPath(), dest.toPath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
 
     public static void main(String[] args) throws IOException {
 //        process("com.classming.Hello", 500, args, null, "");
