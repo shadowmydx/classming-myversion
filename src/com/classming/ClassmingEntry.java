@@ -10,12 +10,13 @@ import soot.jimple.Stmt;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.*;
+
 
 public class ClassmingEntry {
 
@@ -121,6 +122,37 @@ public class ClassmingEntry {
         System.out.println(MathTool.mean(score));
     }
 
+    public static void calculateAverageDistance(List<MutateClass> accepted) {
+        List<State> states = new ArrayList<>();
+        List<Double> score = new ArrayList<>();
+        for (MutateClass sClass: accepted) {
+            State state = new State();
+            state.setTarget(sClass);
+            states.add(state);
+        }
+        for (State state: states) {
+            state.setCoFitnessScore(Fitness.fitness(state, states));
+        }
+        states.sort(new Comparator<State>() {
+            @Override
+            public int compare(State o1, State o2) {
+                double scoreOne = o1.getCoFitnessScore();
+                double scoreTwo = o2.getCoFitnessScore();
+                if (Math.abs(scoreOne - scoreTwo) < .00001) {
+                    return 0;
+                }
+                return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
+            }
+        });
+        states = states.subList(0, 100);
+        for (State state: states) {
+            System.out.print(state.getCoFitnessScore() + " ");
+            score.add(state.getCoFitnessScore());
+        }
+        System.out.println();
+        System.out.println(MathTool.mean(score));
+    }
+
     public static double fitness(double previousCov, double currentCov, int total) {
         double result = Math.exp(0.08 * total * (previousCov - currentCov));
         return 1.0 < result ? 1.0 : result;
@@ -141,6 +173,7 @@ public class ClassmingEntry {
         System.out.println(builder);
     }
 
+
     public static void dumpAcceptHistory(List<MutateClass> list){
         File file = new File("AcceptHistory");
         if (!file.exists()) { file.mkdirs(); }
@@ -155,7 +188,9 @@ public class ClassmingEntry {
                 e.printStackTrace();
             }
         }
-    }
+
+
+
 
     public static void dumpRejectHistory(List<MutateClass> list){
         File file = new File("RejectHistory");
