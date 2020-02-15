@@ -70,6 +70,7 @@ public class EvolutionFramework {
                     System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount);
                     MethodCounter currentCounter = newOne.getCurrentMethod();
                     int distance = LevenshteinDistance.computeLevenshteinDistance(current.getTarget().getClassPureInstructionFlow(), newOne.getClassPureInstructionFlow());
+                    averageDistance.add(distance / 1.0);
                     System.out.println("Distance is " + distance + " signature is " + currentCounter.getSignature());
                     ClassmingEntry.showListElement(newOne.getMethodLiveCodeString(currentCounter.getSignature()));
                     ClassmingEntry.showListElement(current.getTarget().getMethodLiveCodeString(currentCounter.getSignature()));
@@ -102,6 +103,9 @@ public class EvolutionFramework {
             }
         }
         List<Double> totalScore = new ArrayList<>();
+        System.out.println("Average distance is " + MathTool.mean(averageDistance));
+        System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+        System.out.println("max is " + Collections.max(averageDistance));
         for (State state: mutateAcceptHistory) {
             System.out.print(state.getCoFitnessScore() + " ");
             totalScore.add(state.getCoFitnessScore());
