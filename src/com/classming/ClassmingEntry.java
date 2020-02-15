@@ -80,14 +80,14 @@ public class ClassmingEntry {
 //                System.out.println(mutateClass.getBackPath());
             }
         }
+        Recover.recoverFromPath(mutateAcceptHistory.get(0));
+        dumpAcceptHistory(mutateAcceptHistory);
+        dumpRejectHistory(mutateRejectHistory);
         System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
         calculateAverageDistance(mutateAcceptHistory);
-        Recover.recoverFromPath(mutateAcceptHistory.get(0));
-        dumpAcceptHistory(mutateAcceptHistory);
-        dumpRejectHistory(mutateRejectHistory);
     }
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
@@ -201,7 +201,7 @@ public class ClassmingEntry {
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");
+//                        "dependencies/asm-3.1.jar");  // pmd no accept
 //        process("org.sunflow.Benchmark", 500,
 //                new String[]{"-bench","2","256"},
 //                "./sootOutput/sunflow-0.07.2/",
