@@ -111,13 +111,15 @@ public class ClassmingEntry {
                 return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
             }
         });
-        states = states.subList(0, 100);
         for (State state: states) {
             System.out.print(state.getCoFitnessScore() + " ");
             score.add(state.getCoFitnessScore());
         }
         System.out.println();
-        System.out.println(MathTool.mean(score));
+        System.out.println("Total average: " + MathTool.mean(score));
+        score = score.subList(0, 100);
+        System.out.println();
+        System.out.println("Best 100 average: " + MathTool.mean(score));
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {
@@ -178,7 +180,7 @@ public class ClassmingEntry {
     }
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 2019, args, null, "");
+        process("com.classming.Hello", 200, args, null, "");
 //        process("avrora.Main", 500,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
 //                "./sootOutput/avrora-cvs-20091224/",null);

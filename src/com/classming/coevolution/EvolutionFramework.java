@@ -110,6 +110,11 @@ public class EvolutionFramework {
             System.out.print(state.getCoFitnessScore() + " ");
             totalScore.add(state.getCoFitnessScore());
         }
+        System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
+        for (State state: mutateRejectHistory) {
+            totalScore.add(state.getCoFitnessScore());
+        }
+        System.out.println("Total average:" + MathTool.mean(totalScore));
         System.out.println();
         System.out.println(MathTool.mean(totalScore));
     }
