@@ -150,7 +150,7 @@ public class ClassmingEntry {
         for (int i = 1; i < list.size(); i++) {
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/") + ".class");
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/"));
             try {
                 Files.copy(source.toPath(), dest.toPath());
             } catch (Exception e) {
@@ -168,7 +168,7 @@ public class ClassmingEntry {
         for (int i = 0; i < list.size(); i++){
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/")+".class");
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/"));
             try{
                 Files.copy(source.toPath(), dest.toPath());
             }catch (Exception e){

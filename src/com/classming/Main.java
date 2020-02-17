@@ -50,7 +50,7 @@ public class Main {
 
     public static String temporaryOutput(SootClass sClass, String tmpRoot, String tmpName) throws IOException {
         try {
-            String fileName = tmpRoot + "/" + tmpName + sClass.getName();
+            String fileName = tmpRoot + "/" + tmpName + sClass.getName()+".class";
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
             JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
@@ -204,6 +204,7 @@ public class Main {
                 cmd += " " + arg + " ";
             }
         }
+//        System.out.println("getExecutedLiveInstructions: Start!");
         try {
             Process p = Runtime.getRuntime().exec(cmd);
             final InputStream is1 = p.getInputStream();
@@ -256,6 +257,7 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
+//        System.out.println("getExecutedLiveInstructions: Finish!");
         return usedStmt;
     }
 
@@ -268,6 +270,7 @@ public class Main {
                 cmd += " " + arg + " ";
             }
         }
+//        System.out.println("getPureMainInstructionsFlow: Start!");
         try {
             Process p = Runtime.getRuntime().exec(cmd);
             final InputStream is1 = p.getInputStream();
@@ -317,6 +320,7 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
+//        System.out.println("getPureMainInstructionsFlow: Finish!");
         return result;
     }
 
