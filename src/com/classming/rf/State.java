@@ -58,10 +58,10 @@ public class State {
         actions.add(GOTO);
         mappingToIndex.put(LOOK_UP, 2);
         actions.add(LOOK_UP);
-        mappingToIndex.put(RETURN, 3);
-        actions.add(RETURN);
+//        mappingToIndex.put(RETURN, 3);
+//        actions.add(RETURN);
 
-        for (int i = 0; i < 4; i ++) {
+        for (int i = 0; i < 3; i ++) {
             scores.add(0.0);
         }
     }

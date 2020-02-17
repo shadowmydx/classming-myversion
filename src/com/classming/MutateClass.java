@@ -18,6 +18,7 @@ public class MutateClass {
 
     private static int gotoVarCount = 1;
     private static int loopLimit = 5;
+    private static boolean noBegin = false;
 
     public List<String> getClassPureInstructionFlow() {
         return classPureInstructionFlow;
@@ -51,7 +52,9 @@ public class MutateClass {
         int counter = 0;
         for (SootMethod method : this.liveMethod) {
 //            methodOriginalQuery.put(method.getSignature(), Main.getAllStatementsSet(method)); // for tp selection: all stmts
+
             methodOriginalStmtList.put(method.getSignature(), Main.getAllStatementsList(method));
+
             methodMap.put(method.getSignature(), method);
             Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs); // usedStmt is stdout string
             List<Stmt> liveStmt = Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs);
@@ -61,6 +64,7 @@ public class MutateClass {
             int callCount = previousMutationCounter == null ? 1 : previousMutationCounter.get(counter++).getCount();
             mutationCounter.add(new MethodCounter(method.getSignature(), callCount));
         }
+
         transformStmtToString(methodOriginalStmtList, methodOriginalStmtStringList);
         transformStmtToStringAdvanced(methodLiveCode, methodLiveCodeString);
 //        transformStmtToString(methodLiveCode, methodLiveCodeString); // potential bug here because doesn't map to stdout
@@ -119,7 +123,7 @@ public class MutateClass {
             this.returnMutation(current.getSignature()); // change current topology
             return this.deepCopy(current.getSignature()); // applied change to new class
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
 //            UnitPatchingChain units = this.methodLiveBody.get(current.getSignature()).getUnits();
 //            Iterator iter = units.snapshotIterator();
 //            System.err.println("===============================================================");
@@ -215,7 +219,7 @@ public class MutateClass {
         Random rand = new Random();
         int[] candidatesIndex = new int[candidates];
         for (int i = 0; i < candidatesIndex.length; i++) {
-            candidatesIndex[i] = rand.nextInt(targetLiveCode.size() - 1) + 1;
+            candidatesIndex[i] = rand.nextInt(targetLiveCode.size());
         }
         int maxSize = -1;
         for (int i = 0; i < candidatesIndex.length; i++) {
@@ -295,11 +299,9 @@ public class MutateClass {
 //        Stmt firstStmt = (Stmt)iter.next();
         units.insertBefore(assign, liveCode.get(0));
         units.insertBeforeNoRedirect(nop, targetPoint);
-        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
-        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
-
-
-
+        Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
+        units.insertAfter(ifGoto, printStmt);
+        units.insertAfter(substmt, printStmt);
     }
     
     public void returnMutation(String signature) throws IOException {
@@ -308,13 +310,13 @@ public class MutateClass {
         int hookingPoint = this.selectHookingPoint(signature, 2);
         Body body = this.methodLiveBody.get(signature);
         UnitPatchingChain units = body.getUnits();
-
+        Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
         if (signature.contains(" void ")) {
             ReturnVoidStmt returnVoidStmt = Jimple.v().newReturnVoidStmt();
-            units.insertBefore(returnVoidStmt, liveCode.get(hookingPoint));
+            units.insertAfter(returnVoidStmt, printStmt);
         } else {
             ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
-            units.insertBefore(returnStmt, liveCode.get(hookingPoint));
+            units.insertAfter(returnStmt, printStmt);
         }
     }
 
@@ -351,7 +353,7 @@ public class MutateClass {
             }
             selectedTargetPoints.add(tempTargetPoint);
             Stmt nop = Jimple.v().newNopStmt();
-            units.insertBefore(nop, tempTargetPoint);
+            units.insertBeforeNoRedirect(nop, tempTargetPoint);
             labels.add(nop);
         }
         Stmt defaultTargetPoint = selectTargetPoints(signature);
@@ -364,7 +366,7 @@ public class MutateClass {
             selectTimes++;
         }
         Stmt defaultNop = Jimple.v().newNopStmt();
-        units.insertBefore(defaultNop, defaultTargetPoint);
+        units.insertBeforeNoRedirect(defaultNop, defaultTargetPoint);
         JLookupSwitchStmt switchStmt = new JLookupSwitchStmt(newVar, lookUpValues, labels, defaultNop);
 
 
@@ -379,10 +381,15 @@ public class MutateClass {
 //        Iterator<Unit> iter = units.snapshotIterator();
 //        Stmt firstStmt = (Stmt)iter.next();
         units.insertBefore(assign, liveCode.get(0));
-        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
-        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
-        units.insertBeforeNoRedirect(switchStmt, liveCode.get(hookingPoint));
-        units.insertBeforeNoRedirect(skipSwitch, liveCode.get(hookingPoint));
+        Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
+        units.insertAfter(skipSwitch, printStmt);
+        units.insertAfter(switchStmt, printStmt);
+        units.insertAfter(ifGoto, printStmt);
+        units.insertAfter(substmt, printStmt);
+//        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
+//        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
+//        units.insertBeforeNoRedirect(switchStmt, liveCode.get(hookingPoint));
+//        units.insertBeforeNoRedirect(skipSwitch, liveCode.get(hookingPoint));
 
     }
 
