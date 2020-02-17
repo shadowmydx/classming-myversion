@@ -19,14 +19,14 @@ public class ClassmingEntry {
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
-        int randomAction = random.nextInt(3);
+        int randomAction = random.nextInt(2);
         switch (randomAction) {
             case 0:
                 return target.iteration();
             case 1:
                 return target.lookUpSwitchIteration();
-            case 2:
-                return target.returnIteration();
+//            case 2:
+//                return target.returnIteration();
         }
         return null;
     }
@@ -178,10 +178,10 @@ public class ClassmingEntry {
     }
 
     public static void main(String[] args) throws IOException {
-//        process("com.classming.Hello", 500, args, null, "");
-        process("avrora.Main", 500,
-                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-                "./sootOutput/avrora-cvs-20091224/",null);
+        process("com.classming.Hello", 2019, args, null, "");
+//        process("avrora.Main", 500,
+//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+//                "./sootOutput/avrora-cvs-20091224/",null);
 //        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 500,
 //                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
 //        process("org.apache.fop.cli.Main", 500,
