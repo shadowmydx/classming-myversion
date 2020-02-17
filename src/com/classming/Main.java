@@ -50,7 +50,7 @@ public class Main {
 
     public static String temporaryOutput(SootClass sClass, String tmpRoot, String tmpName) throws IOException {
         try {
-            String fileName = tmpRoot + "/" + tmpName + sClass.getName();
+            String fileName = tmpRoot + "/" + tmpName + sClass.getName()+".class";
             OutputStream streamOut = new JasminOutputStream(new FileOutputStream(fileName));
             PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
             JasminClass jasminClass = new soot.jimple.JasminClass(sClass);
@@ -204,18 +204,60 @@ public class Main {
                 cmd += " " + arg + " ";
             }
         }
-        Process p = Runtime.getRuntime().exec(cmd);
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            if (line.contains(LOG_PREVIOUS) && line.contains(signature)) {
-                String[] elements = line.split("[*]+");
-                String currentStmt = elements[3].trim();
-                if (!usedStmt.contains(currentStmt)) {
-                    usedStmt.add(currentStmt);
+//        System.out.println("getExecutedLiveInstructions: Start!");
+        try {
+            Process p = Runtime.getRuntime().exec(cmd);
+            final InputStream is1 = p.getInputStream();
+            final InputStream is2 = p.getErrorStream();
+            new Thread(() -> {
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+                try {
+                    String line1 = null;
+                    while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                        if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
+                            String[] elements = line1.split("[*]+");
+                            String currentStmt = elements[3].trim();
+                            if (!usedStmt.contains(currentStmt)) {
+                                usedStmt.add(currentStmt);
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }
+                finally{
+                    try {
+                        is1.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            new Thread(() -> {
+                BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
+                try {
+                    String line2 = null ;
+                    while ((line2 = br2.readLine()) !=  null ){}
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                finally{
+                    try {
+                        is2.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            p.waitFor();
+            p.destroy();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+//        System.out.println("getExecutedLiveInstructions: Finish!");
         return usedStmt;
     }
 
@@ -228,15 +270,57 @@ public class Main {
                 cmd += " " + arg + " ";
             }
         }
-        Process p = Runtime.getRuntime().exec(cmd);
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            if (line.contains(LOG_PREVIOUS) && !usedStmt.contains(line)) {
-                usedStmt.add(line);
-                result.add(line);
-            }
+//        System.out.println("getPureMainInstructionsFlow: Start!");
+        try {
+            Process p = Runtime.getRuntime().exec(cmd);
+            final InputStream is1 = p.getInputStream();
+            final InputStream is2 = p.getErrorStream();
+            new Thread(() -> {
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+                try {
+                    String line1 = null;
+                    while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                        if (line1.contains(LOG_PREVIOUS) && !usedStmt.contains(line1)) {
+                            usedStmt.add(line1);
+                            result.add(line1);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                finally{
+                    try {
+                        is1.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            new Thread(() -> {
+                BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
+                try {
+                    String line2 = null ;
+                    while ((line2 = br2.readLine()) !=  null ){}
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                finally{
+                    try {
+                        is2.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            p.waitFor();
+            p.destroy();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+//        System.out.println("getPureMainInstructionsFlow: Finish!");
         return result;
     }
 

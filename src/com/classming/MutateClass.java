@@ -2,7 +2,9 @@ package com.classming;
 
 import soot.*;
 import soot.jimple.*;
+import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JLookupSwitchStmt;
+import soot.jimple.internal.JReturnStmt;
 
 import javax.naming.Name;
 import java.io.IOException;
@@ -311,12 +313,59 @@ public class MutateClass {
         Body body = this.methodLiveBody.get(signature);
         UnitPatchingChain units = body.getUnits();
         Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
-        if (signature.contains(" void ")) {
-            ReturnVoidStmt returnVoidStmt = Jimple.v().newReturnVoidStmt();
-            units.insertAfter(returnVoidStmt, printStmt);
-        } else {
-            ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
-            units.insertAfter(returnStmt, printStmt);
+        // insert goto
+        Stmt nop = Jimple.v().newNopStmt();
+        GotoStmt gotoNop = Jimple.v().newGotoStmt(nop);
+        units.insertAfter(gotoNop, printStmt);
+        // check if has return in live code.
+        Stmt targetReturnStmt = getReturnStmt(signature);
+        for(Unit unit: units){
+            if (unit.toString().equals(targetReturnStmt.toString())){
+                units.insertBeforeNoRedirect(nop, unit);
+                return;
+            }
+        }
+        // create return stmt
+        units.insertAfter(targetReturnStmt, units.getLast());
+        units.insertBeforeNoRedirect(nop, targetReturnStmt);
+//        if (signature.contains(" void ")) {
+//            ReturnVoidStmt returnVoidStmt = Jimple.v().newReturnVoidStmt();
+//            units.insertAfter(returnVoidStmt, printStmt);
+//        } else {
+//            ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
+//            units.insertAfter(returnStmt, printStmt);
+//        }
+    }
+
+    // Return the target return statement
+    public Stmt getReturnStmt(String signature){
+        List<String> originStmtString = methodOriginalStmtStringList.get(signature);
+        List<Stmt> originStmt = methodOriginalStmtList.get(signature);
+        List<Stmt> foundReturnStmt = new ArrayList();
+        // find all return stmt in this method
+        for (int i = 0; i < originStmtString.size(); i++){
+            String stmtString = originStmtString.get(i);
+            if(stmtString.contains("return")){
+                // the return stmt can be "if i1 != 0 goto return 0"
+                if(stmtString.contains("goto")){
+                    JIfStmt ifReturnStmt = (JIfStmt)originStmt.get(i);
+                    Stmt returnStmt = (Stmt)ifReturnStmt.getTargetBox().getUnit();
+                    foundReturnStmt.add(returnStmt);
+                }else{
+                    Stmt returnStmt = originStmt.get(i);
+                    foundReturnStmt.add(returnStmt);
+                }
+            }
+        }
+        // create return stmt if it has multiple return stmts
+        if(foundReturnStmt.size() == 1){
+            return foundReturnStmt.get(0);
+        }else {
+            if(signature.contains("void")){
+                return Jimple.v().newReturnVoidStmt();
+            }else{
+                return Jimple.v().newReturnStmt(NullConstant.v());
+            }
         }
     }
 

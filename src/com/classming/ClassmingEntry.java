@@ -78,14 +78,14 @@ public class ClassmingEntry {
 //                System.out.println(mutateClass.getBackPath());
             }
         }
+        Recover.recoverFromPath(mutateAcceptHistory.get(0));
+        dumpAcceptHistory(mutateAcceptHistory);
+        dumpRejectHistory(mutateRejectHistory);
         System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
         calculateAverageDistance(mutateAcceptHistory);
-        Recover.recoverFromPath(mutateAcceptHistory.get(0));
-        dumpAcceptHistory(mutateAcceptHistory);
-        dumpRejectHistory(mutateRejectHistory);
     }
 
 
@@ -150,7 +150,7 @@ public class ClassmingEntry {
         for (int i = 1; i < list.size(); i++) {
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/") + ".class");
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/"));
             try {
                 Files.copy(source.toPath(), dest.toPath());
             } catch (Exception e) {
@@ -168,7 +168,7 @@ public class ClassmingEntry {
         for (int i = 0; i < list.size(); i++){
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/")+".class");
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/"));
             try{
                 Files.copy(source.toPath(), dest.toPath());
             }catch (Exception e){
@@ -206,7 +206,7 @@ public class ClassmingEntry {
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");
+//                        "dependencies/asm-3.1.jar");  // pmd no accept
 //        process("org.sunflow.Benchmark", 500,
 //                new String[]{"-bench","2","256"},
 //                "./sootOutput/sunflow-0.07.2/",
