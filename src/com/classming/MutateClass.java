@@ -308,8 +308,14 @@ public class MutateClass {
         int hookingPoint = this.selectHookingPoint(signature, 2);
         Body body = this.methodLiveBody.get(signature);
         UnitPatchingChain units = body.getUnits();
-        ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
-        units.insertBefore(returnStmt, liveCode.get(hookingPoint));
+
+        if (signature.contains(" void ")) {
+            ReturnVoidStmt returnVoidStmt = Jimple.v().newReturnVoidStmt();
+            units.insertBefore(returnVoidStmt, liveCode.get(hookingPoint));
+        } else {
+            ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
+            units.insertBefore(returnStmt, liveCode.get(hookingPoint));
+        }
     }
 
     public void lookUpSwitchMutation(String signature) throws IOException {
