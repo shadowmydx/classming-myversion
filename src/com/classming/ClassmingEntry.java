@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -32,6 +33,9 @@ public class ClassmingEntry {
     }
 
     public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+//        PrintStream newStream=new PrintStream("./"+className+".log");
+//        System.setOut(newStream);
+//        System.setErr(newStream);
         if(classPath!=null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -51,6 +55,7 @@ public class ClassmingEntry {
             System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
             MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
+                newOne.saveCurrentClass();
                 MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1);
                 MethodCounter current = newOne.getCurrentMethod();
                 List<String> currentLiveCode = newOne.getMethodLiveCodeString(current.getSignature());
