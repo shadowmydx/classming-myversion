@@ -2,6 +2,7 @@ package com.classming;
 
 import com.classming.Vector.LevenshteinDistance;
 import com.classming.Vector.MathTool;
+import com.classming.coevolution.EvolutionFramework;
 import com.classming.coevolution.Fitness;
 import com.classming.record.Recover;
 import com.classming.rf.State;
@@ -122,9 +123,9 @@ public class ClassmingEntry {
         }
         System.out.println();
         System.out.println("Total average: " + MathTool.mean(score));
-        score = score.subList(0, 100);
+        score = score.subList(0, EvolutionFramework.POPULATION_LIMIT);
         System.out.println();
-        System.out.println("Best 100 average: " + MathTool.mean(score));
+        System.out.println("Best average: " + MathTool.mean(score));
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {
