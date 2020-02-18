@@ -210,32 +210,6 @@ public class Main {
             final InputStream is1 = p.getInputStream();
             final InputStream is2 = p.getErrorStream();
             new Thread(() -> {
-                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
-                try {
-                    String line1 = null;
-                    while ((line1 = br1.readLine()) != null) {
-//                        System.out.println(line1);
-                        if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
-                            String[] elements = line1.split("[*]+");
-                            String currentStmt = elements[3].trim();
-                            if (!usedStmt.contains(currentStmt)) {
-                                usedStmt.add(currentStmt);
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally{
-                    try {
-                        is1.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-
-            new Thread(() -> {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
@@ -252,6 +226,28 @@ public class Main {
                 }
             }).start();
 
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+            try {
+                String line1 = null;
+                while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                    if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
+                        String[] elements = line1.split("[*]+");
+                        String currentStmt = elements[3].trim();
+                        if (!usedStmt.contains(currentStmt)) {
+                            usedStmt.add(currentStmt);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                    e.printStackTrace();
+            } finally{
+                try {
+                    is1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             p.waitFor();
             p.destroy();
         } catch (Exception e) {
@@ -276,29 +272,6 @@ public class Main {
             final InputStream is1 = p.getInputStream();
             final InputStream is2 = p.getErrorStream();
             new Thread(() -> {
-                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
-                try {
-                    String line1 = null;
-                    while ((line1 = br1.readLine()) != null) {
-//                        System.out.println(line1);
-                        if (line1.contains(LOG_PREVIOUS) && !usedStmt.contains(line1)) {
-                            usedStmt.add(line1);
-                            result.add(line1);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally{
-                    try {
-                        is1.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-
-            new Thread(() -> {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
@@ -315,6 +288,25 @@ public class Main {
                 }
             }).start();
 
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+            try {
+                String line1 = null;
+                while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                    if (line1.contains(LOG_PREVIOUS) && !usedStmt.contains(line1)) {
+                        usedStmt.add(line1);
+                        result.add(line1);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    is1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             p.waitFor();
             p.destroy();
         } catch (Exception e) {
