@@ -31,7 +31,7 @@ public class EvolutionFramework {
 
     private static Map<String, Action> actionContainer = new HashMap<>();
     static {
-        actionContainer.put(State.RETURN, returnAction);
+//        actionContainer.put(State.RETURN, returnAction);
         actionContainer.put(State.LOOK_UP, lookupAction);
         actionContainer.put(State.GOTO, gotoAction);
     }
@@ -70,6 +70,7 @@ public class EvolutionFramework {
                     System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount);
                     MethodCounter currentCounter = newOne.getCurrentMethod();
                     int distance = LevenshteinDistance.computeLevenshteinDistance(current.getTarget().getClassPureInstructionFlow(), newOne.getClassPureInstructionFlow());
+                    averageDistance.add(distance / 1.0);
                     System.out.println("Distance is " + distance + " signature is " + currentCounter.getSignature());
                     ClassmingEntry.showListElement(newOne.getMethodLiveCodeString(currentCounter.getSignature()));
                     ClassmingEntry.showListElement(current.getTarget().getMethodLiveCodeString(currentCounter.getSignature()));
@@ -102,17 +103,28 @@ public class EvolutionFramework {
             }
         }
         List<Double> totalScore = new ArrayList<>();
+        System.out.println("Average distance is " + MathTool.mean(averageDistance));
+        System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+        System.out.println("max is " + Collections.max(averageDistance));
         for (State state: mutateAcceptHistory) {
             System.out.print(state.getCoFitnessScore() + " ");
             totalScore.add(state.getCoFitnessScore());
         }
+        System.out.println();
+        System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
+        mutateRejectHistory.addAll(mutateAcceptHistory);
+        for (State state: mutateRejectHistory) {
+            state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
+            totalScore.add(state.getCoFitnessScore());
+        }
+        System.out.println("Total average:" + MathTool.mean(totalScore));
         System.out.println();
         System.out.println(MathTool.mean(totalScore));
     }
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        fwk.process("com.classming.Hello", 2000, args, null, "");
+        fwk.process("com.classming.Hello", 1000, args, null, "");
     }
 
 }

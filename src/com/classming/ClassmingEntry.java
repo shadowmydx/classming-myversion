@@ -11,30 +11,31 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.io.PrintStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 
 public class ClassmingEntry {
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
-        int randomAction = random.nextInt(3);
+        int randomAction = random.nextInt(2);
         switch (randomAction) {
             case 0:
                 return target.iteration();
             case 1:
                 return target.lookUpSwitchIteration();
-            case 2:
-                return target.returnIteration();
+//            case 2:
+//                return target.returnIteration();
         }
         return null;
     }
 
     public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+//        PrintStream newStream=new PrintStream("./"+className+".log");
+//        System.setOut(newStream);
+//        System.setErr(newStream);
         if(classPath!=null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -54,6 +55,7 @@ public class ClassmingEntry {
             System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
             MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
+                newOne.saveCurrentClass();
                 MutateClass previousClass = mutateAcceptHistory.get(mutateAcceptHistory.size() - 1);
                 MethodCounter current = newOne.getCurrentMethod();
                 List<String> currentLiveCode = newOne.getMethodLiveCodeString(current.getSignature());
@@ -81,15 +83,16 @@ public class ClassmingEntry {
 //                System.out.println(mutateClass.getBackPath());
             }
         }
+        Recover.recoverFromPath(mutateAcceptHistory.get(0));
+        dumpAcceptHistory(mutateAcceptHistory);
+        dumpRejectHistory(mutateRejectHistory);
         System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
         calculateAverageDistance(mutateAcceptHistory);
-        Recover.recoverFromPath(mutateAcceptHistory.get(0));
-        dumpAcceptHistory(mutateAcceptHistory);
-        dumpRejectHistory(mutateRejectHistory);
     }
+
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
         List<State> states = new ArrayList<>();
@@ -113,44 +116,15 @@ public class ClassmingEntry {
                 return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
             }
         });
-        states = states.subList(0, 100);
         for (State state: states) {
             System.out.print(state.getCoFitnessScore() + " ");
             score.add(state.getCoFitnessScore());
         }
         System.out.println();
-        System.out.println(MathTool.mean(score));
-    }
-
-    public static void calculateAverageDistance(List<MutateClass> accepted) {
-        List<State> states = new ArrayList<>();
-        List<Double> score = new ArrayList<>();
-        for (MutateClass sClass: accepted) {
-            State state = new State();
-            state.setTarget(sClass);
-            states.add(state);
-        }
-        for (State state: states) {
-            state.setCoFitnessScore(Fitness.fitness(state, states));
-        }
-        states.sort(new Comparator<State>() {
-            @Override
-            public int compare(State o1, State o2) {
-                double scoreOne = o1.getCoFitnessScore();
-                double scoreTwo = o2.getCoFitnessScore();
-                if (Math.abs(scoreOne - scoreTwo) < .00001) {
-                    return 0;
-                }
-                return (o2.getCoFitnessScore() - o1.getCoFitnessScore()) > 0 ? 1 : -1;
-            }
-        });
-        states = states.subList(0, 100);
-        for (State state: states) {
-            System.out.print(state.getCoFitnessScore() + " ");
-            score.add(state.getCoFitnessScore());
-        }
+        System.out.println("Total average: " + MathTool.mean(score));
+        score = score.subList(0, 100);
         System.out.println();
-        System.out.println(MathTool.mean(score));
+        System.out.println("Best 100 average: " + MathTool.mean(score));
     }
 
     public static double fitness(double previousCov, double currentCov, int total) {
@@ -174,20 +148,23 @@ public class ClassmingEntry {
     }
 
 
-    public static void dumpAcceptHistory(List<MutateClass> list){
+    public static void dumpAcceptHistory(List<MutateClass> list) {
         File file = new File("AcceptHistory");
-        if (!file.exists()) { file.mkdirs(); }
+        if (!file.exists()) {
+            file.mkdirs();
+        }
         // The first one is not mutant
-        for (int i = 1; i < list.size(); i++){
+        for (int i = 1; i < list.size(); i++) {
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/")+".class");
-            try{
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/"));
+            try {
                 Files.copy(source.toPath(), dest.toPath());
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
 
 
 
@@ -198,7 +175,7 @@ public class ClassmingEntry {
         for (int i = 0; i < list.size(); i++){
             String backPath = list.get(i).getBackPath();
             File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/")+".class");
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/"));
             try{
                 Files.copy(source.toPath(), dest.toPath());
             }catch (Exception e){
@@ -208,10 +185,10 @@ public class ClassmingEntry {
     }
 
     public static void main(String[] args) throws IOException {
-//        process("com.classming.Hello", 500, args, null, "");
-        process("avrora.Main", 500,
-                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-                "./sootOutput/avrora-cvs-20091224/",null);
+        process("com.classming.Hello", 1010, args, null, "");
+//        process("avrora.Main", 500,
+//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+//                "./sootOutput/avrora-cvs-20091224/",null);
 //        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 500,
 //                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
 //        process("org.apache.fop.cli.Main", 500,
@@ -236,7 +213,7 @@ public class ClassmingEntry {
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");
+//                        "dependencies/asm-3.1.jar");  // pmd no accept
 //        process("org.sunflow.Benchmark", 500,
 //                new String[]{"-bench","2","256"},
 //                "./sootOutput/sunflow-0.07.2/",
