@@ -185,7 +185,7 @@ public class ClassmingEntry {
     }
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 200, args, null, "");
+        process("com.classming.Hello", 1010, args, null, "");
 //        process("avrora.Main", 500,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
 //                "./sootOutput/avrora-cvs-20091224/",null);

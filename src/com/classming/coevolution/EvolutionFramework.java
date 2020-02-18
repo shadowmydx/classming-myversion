@@ -110,8 +110,11 @@ public class EvolutionFramework {
             System.out.print(state.getCoFitnessScore() + " ");
             totalScore.add(state.getCoFitnessScore());
         }
+        System.out.println();
         System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
+        mutateRejectHistory.addAll(mutateAcceptHistory);
         for (State state: mutateRejectHistory) {
+            state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
             totalScore.add(state.getCoFitnessScore());
         }
         System.out.println("Total average:" + MathTool.mean(totalScore));
@@ -121,7 +124,7 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        fwk.process("com.classming.Hello", 2000, args, null, "");
+        fwk.process("com.classming.Hello", 1000, args, null, "");
     }
 
 }

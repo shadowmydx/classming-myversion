@@ -210,32 +210,6 @@ public class Main {
             final InputStream is1 = p.getInputStream();
             final InputStream is2 = p.getErrorStream();
             new Thread(() -> {
-                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
-                try {
-                    String line1 = null;
-                    while ((line1 = br1.readLine()) != null) {
-//                        System.out.println(line1);
-                        if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
-                            String[] elements = line1.split("[*]+");
-                            String currentStmt = elements[3].trim();
-                            if (!usedStmt.contains(currentStmt)) {
-                                usedStmt.add(currentStmt);
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally{
-                    try {
-                        is1.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-
-            new Thread(() -> {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
@@ -252,6 +226,28 @@ public class Main {
                 }
             }).start();
 
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+            try {
+                String line1 = null;
+                while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                    if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
+                        String[] elements = line1.split("[*]+");
+                        String currentStmt = elements[3].trim();
+                        if (!usedStmt.contains(currentStmt)) {
+                            usedStmt.add(currentStmt);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                    e.printStackTrace();
+            } finally{
+                try {
+                    is1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             p.waitFor();
             p.destroy();
         } catch (Exception e) {
@@ -276,29 +272,6 @@ public class Main {
             final InputStream is1 = p.getInputStream();
             final InputStream is2 = p.getErrorStream();
             new Thread(() -> {
-                BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
-                try {
-                    String line1 = null;
-                    while ((line1 = br1.readLine()) != null) {
-//                        System.out.println(line1);
-                        if (line1.contains(LOG_PREVIOUS) && !usedStmt.contains(line1)) {
-                            usedStmt.add(line1);
-                            result.add(line1);
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                finally{
-                    try {
-                        is1.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-
-            new Thread(() -> {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
@@ -315,6 +288,25 @@ public class Main {
                 }
             }).start();
 
+            BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+            try {
+                String line1 = null;
+                while ((line1 = br1.readLine()) != null) {
+//                        System.out.println(line1);
+                    if (line1.contains(LOG_PREVIOUS) && !usedStmt.contains(line1)) {
+                        usedStmt.add(line1);
+                        result.add(line1);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    is1.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             p.waitFor();
             p.destroy();
         } catch (Exception e) {
@@ -422,33 +414,38 @@ public class Main {
         for (SootMethod method: d) {
             method.retrieveActiveBody();
         }
-        SootMethod test = d.get(3);
+        SootMethod test = d.get(1);
         System.out.println(test.getSignature());
         Body body = test.getActiveBody();
         UnitPatchingChain units = body.getUnits();
 
 //        Local newVar = Jimple.v().newLocal("_M", IntType.v());
-//        Value rightValue = IntConstant.v(100);
+//        Value rightValue = IntConstant.v(1);
+//        Stmt nop = Jimple.v().newNopStmt();
 //        AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
 //        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1));
 //        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
 //        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
-//        IfStmt ifGoto = Jimple.v().newIfStmt(cond, substmt);
+//        IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop);
         Iterator<Unit> iter = units.snapshotIterator();
 
         List<Stmt> allStmt = new ArrayList<>();
+        int targetIndex = -1;
         while (iter.hasNext()) {
             allStmt.add((Stmt)iter.next());
-            if (allStmt.get(allStmt.size() - 1).toString().equals("goto [?= i0 = i0 + -1]")) {
-                units.remove(allStmt.get(allStmt.size() - 1));
+            if (allStmt.get(allStmt.size() - 1).toString().contains("$r8 = <java.lang.System: java.io.PrintStream out>")) {
+                targetIndex = allStmt.size() - 1;
+
             }
             System.out.println(allStmt.get(allStmt.size() - 1));
         }
         System.out.println("===================================");
 //        body.getLocals().add(newVar);
+//        units.insertBeforeNoRedirect(nop, allStmt.get(allStmt.size() - 1));
 //        units.insertBefore(assign, allStmt.get(1));
-//        units.insertBefore(substmt, allStmt.get(1));
-//        units.insertBefore(ifGoto, allStmt.get(1));
+//        units.insertAfter(ifGoto, allStmt.get(targetIndex));
+//        units.insertAfter(substmt, allStmt.get(targetIndex));
+
 //        iter = units.snapshotIterator();
 //        while (iter.hasNext()) {
 //            System.out.println(iter.next().toString());
@@ -500,7 +497,7 @@ public class Main {
 //            }
 //            line ++;
 //        }
-        outputClassFile(c);
+//        outputClassFile(c);
 //        temporaryOutput(c, "./tmp", "aaa");
 //        Set<String> usedStmt1 = getExecutedLiveInstructions("com.classming.Hello", "void main(java.lang.String[])", args);
 //        List<Stmt> result1 = getActiveInstructions(usedStmt1, "com.classming.Hello", "void main(java.lang.String[])", args);
