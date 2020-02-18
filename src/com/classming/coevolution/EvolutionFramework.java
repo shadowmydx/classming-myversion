@@ -31,7 +31,7 @@ public class EvolutionFramework {
 
     private static Map<String, Action> actionContainer = new HashMap<>();
     static {
-//        actionContainer.put(State.RETURN, returnAction);
+        actionContainer.put(State.RETURN, returnAction);
         actionContainer.put(State.LOOK_UP, lookupAction);
         actionContainer.put(State.GOTO, gotoAction);
     }
