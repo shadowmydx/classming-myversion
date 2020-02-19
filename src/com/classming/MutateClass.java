@@ -392,7 +392,7 @@ public class MutateClass {
         List<IntConstant> lookUpValues = new ArrayList<>();
         List<Stmt> labels = new ArrayList<>();  // nops
         List<Stmt> selectedTargetPoints = new ArrayList<>();  // targets for lookUp values
-        int gotoVarCountCopy = gotoVarCount - 1;  // value of _M
+        int gotoVarCountCopy = loopLimit;  // value of _M
         for (int i = 0; i < caseNum; i++){
             lookUpValues.add(IntConstant.v(--gotoVarCountCopy));
             Stmt tempTargetPoint = selectTargetPoints(signature);
@@ -422,7 +422,6 @@ public class MutateClass {
         units.insertBeforeNoRedirect(defaultNop, defaultTargetPoint);
         JLookupSwitchStmt switchStmt = new JLookupSwitchStmt(newVar, lookUpValues, labels, defaultNop);
 
-
         Stmt skipSwitch = Jimple.v().newNopStmt();
         Value rightValue = IntConstant.v(loopLimit);
         AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
@@ -431,19 +430,12 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, skipSwitch);
 
-//        Iterator<Unit> iter = units.snapshotIterator();
-//        Stmt firstStmt = (Stmt)iter.next();
         units.insertBefore(assign, liveCode.get(0));
         Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
         units.insertAfter(skipSwitch, printStmt);
         units.insertAfter(switchStmt, printStmt);
         units.insertAfter(ifGoto, printStmt);
         units.insertAfter(substmt, printStmt);
-//        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(switchStmt, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(skipSwitch, liveCode.get(hookingPoint));
-
     }
 
 
