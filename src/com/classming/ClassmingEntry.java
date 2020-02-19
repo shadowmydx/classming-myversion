@@ -2,6 +2,7 @@ package com.classming;
 
 import com.classming.Vector.LevenshteinDistance;
 import com.classming.Vector.MathTool;
+import com.classming.coevolution.ClusterTool;
 import com.classming.coevolution.Fitness;
 import com.classming.record.Recover;
 import com.classming.rf.State;
@@ -83,6 +84,9 @@ public class ClassmingEntry {
 //                System.out.println(mutateClass.getBackPath());
             }
         }
+
+        ClusterTool.getClassmingClusterData(mutateAcceptHistory);
+
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
         dumpAcceptHistory(mutateAcceptHistory);
         dumpRejectHistory(mutateRejectHistory);

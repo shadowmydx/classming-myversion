@@ -102,6 +102,9 @@ public class EvolutionFramework {
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
             }
         }
+
+        ClusterTool.getEvoClusterData(mutateAcceptHistory, mutateRejectHistory);
+
         List<Double> totalScore = new ArrayList<>();
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
