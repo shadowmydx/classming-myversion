@@ -14,7 +14,7 @@ import java.util.*;
 
 public class EvolutionFramework {
     private static final int DEAD_END = -1;
-    private static final int POPULATION_LIMIT = 100;
+    public static final int POPULATION_LIMIT = 20;
 
     private static Action gotoAction = new GotoAction();
     private static Action lookupAction = new LookupAction();
@@ -102,6 +102,9 @@ public class EvolutionFramework {
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
             }
         }
+
+        ClusterTool.getEvoClusterData(mutateAcceptHistory, mutateRejectHistory);
+
         List<Double> totalScore = new ArrayList<>();
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
