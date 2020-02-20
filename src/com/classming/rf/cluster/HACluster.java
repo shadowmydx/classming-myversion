@@ -126,7 +126,8 @@ public class HACluster implements Cluster{
                         1.0 / point.stateCluster.size() / point.stateCluster.size() / sum;
             }
         }
-        System.out.println(Arrays.asList(distribution).toString());
+//        System.out.println(Arrays.asList(distribution).toString());
+        printClusterInfo();
         return Arrays.asList(distribution);
     }
 
@@ -165,6 +166,14 @@ public class HACluster implements Cluster{
         List<String> bMethodLiveCode = b.getTarget().getClassPureInstructionFlow();
 //        System.out.println("stateDistance: " + LevenshteinDistance.computeLevenshteinDistance(aMethodLiveCode, bMethodLiveCode));
         return LevenshteinDistance.computeLevenshteinDistance(aMethodLiveCode, bMethodLiveCode);
+    }
+
+    private void printClusterInfo() {
+        System.out.println("cluster number: " + pointSet.size());
+        for (Point point: pointSet) {
+            System.out.print(" " + point.stateCluster.size() + " ");
+        }
+        System.out.println();
     }
 
 }

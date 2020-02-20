@@ -313,12 +313,23 @@ public class MutateClass {
         Body body = this.methodLiveBody.get(signature);
         UnitPatchingChain units = body.getUnits();
         Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
-        // insert goto
-        Stmt nop = Jimple.v().newNopStmt();
-        GotoStmt gotoNop = Jimple.v().newGotoStmt(nop);
-        units.insertAfter(gotoNop, printStmt);
-        // check if has return in live code.
+
         Stmt targetReturnStmt = getReturnStmt(signature);
+        Stmt nop = Jimple.v().newNopStmt();
+        // create new variable and stmts
+        Local newVar = Jimple.v().newLocal("_M" + (gotoVarCount++), IntType.v());
+        body.getLocals().add(newVar);
+        AssignStmt assign = Jimple.v().newAssignStmt(newVar, IntConstant.v(1)); // _M = 1
+        SubExpr sub = Jimple.v().newSubExpr(newVar, IntConstant.v(1)); // _M-1
+        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub); // _M = _M-1
+        ConditionExpr cond = Jimple.v().newLeExpr(newVar, IntConstant.v(0)); // if _M <= 0
+        IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop); // if _M <= 0 goto nop
+        // insert stmts
+        units.insertBefore(assign, liveCode.get(0));
+        units.insertAfter(ifGoto, printStmt);
+        units.insertAfter(substmt, printStmt);
+
+        // check if has return in live code.
         for(Unit unit: units){
             if (unit.toString().equals(targetReturnStmt.toString())){
                 units.insertBeforeNoRedirect(nop, unit);
@@ -328,13 +339,6 @@ public class MutateClass {
         // create return stmt
         units.insertAfter(targetReturnStmt, units.getLast());
         units.insertBeforeNoRedirect(nop, targetReturnStmt);
-//        if (signature.contains(" void ")) {
-//            ReturnVoidStmt returnVoidStmt = Jimple.v().newReturnVoidStmt();
-//            units.insertAfter(returnVoidStmt, printStmt);
-//        } else {
-//            ReturnStmt returnStmt = Jimple.v().newReturnStmt(NullConstant.v());
-//            units.insertAfter(returnStmt, printStmt);
-//        }
     }
 
     // Return the target return statement
