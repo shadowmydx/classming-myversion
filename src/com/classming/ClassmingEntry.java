@@ -31,8 +31,8 @@ public class ClassmingEntry {
                 return target.iteration();
             case 1:
                 return target.lookUpSwitchIteration();
-//            case 2:
-//                return target.returnIteration();
+            case 2:
+                return target.returnIteration();
         }
         return null;
     }
