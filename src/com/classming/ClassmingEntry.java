@@ -38,9 +38,9 @@ public class ClassmingEntry {
     }
 
     public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
-//        PrintStream newStream=new PrintStream("./"+className+".log");
-//        System.setOut(newStream);
-//        System.setErr(newStream);
+        PrintStream newStream=new PrintStream("./"+className+".log");
+        System.setOut(newStream);
+        System.setErr(newStream);
         if(classPath!=null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -193,12 +193,16 @@ public class ClassmingEntry {
     }
 
     public static void main(String[] args) throws IOException {
-        process("com.classming.Hello", 1010, args, null, "");
-//        process("avrora.Main", 500,
-//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-//                "./sootOutput/avrora-cvs-20091224/",null);
-//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 500,
-//                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+        long startTime = System.currentTimeMillis();
+
+//        process("com.classming.Hello", 1010, args, null, "");
+        process("avrora.Main", 2000,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
+        process("org.apache.batik.apps.rasterizer.Main", 2000,null,
+                "./sootOutput/batik-all/",null);
+        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 2000,
+                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
 //        process("org.apache.fop.cli.Main", 500,
 //                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
 //                "./sootOutput/fop/",
@@ -222,9 +226,13 @@ public class ClassmingEntry {
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
 //                        "dependencies/asm-3.1.jar");  // pmd no accept
-//        process("org.sunflow.Benchmark", 500,
-//                new String[]{"-bench","2","256"},
-//                "./sootOutput/sunflow-0.07.2/",
-//                "dependencies/janino-2.5.15.jar");
+        process("org.sunflow.Benchmark", 2000,
+                new String[]{"-bench","2","256"},
+                "./sootOutput/sunflow-0.07.2/",
+                "dependencies/janino-2.5.15.jar");
+
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Program used time: "+(endTime-startTime)+" ms");
     }
 }
