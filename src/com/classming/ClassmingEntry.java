@@ -25,7 +25,7 @@ public class ClassmingEntry {
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
-        int randomAction = random.nextInt(2);
+        int randomAction = random.nextInt(3);
         switch (randomAction) {
             case 0:
                 return target.iteration();

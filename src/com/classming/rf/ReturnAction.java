@@ -9,9 +9,10 @@ public class ReturnAction implements Action{
     @Override
     public State proceedAction(MutateClass target, List<State> total) {
         try {
-            MutateClass newOne = target.returnIteration();
+            MutateClass newOne = target.evoReturnIteration(false);
             State nextState = new State();
             nextState.setTarget(newOne);
+            nextState.setCurrentMethod(target.getCurrentMethod());
             return nextState;
         } catch (IOException e) {
             e.printStackTrace();

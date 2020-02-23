@@ -31,7 +31,7 @@ public class EvolutionFramework {
 
     private static Map<String, Action> actionContainer = new HashMap<>();
     static {
-//        actionContainer.put(State.RETURN, returnAction);
+        actionContainer.put(State.RETURN, returnAction);
         actionContainer.put(State.LOOK_UP, lookupAction);
         actionContainer.put(State.GOTO, gotoAction);
     }
@@ -60,7 +60,7 @@ public class EvolutionFramework {
             for (int j = 0; j < currentSize; j ++) {
                 State current = mutateAcceptHistory.get(j);
                 current.setTarget(Recover.recoverFromPath(current.getTarget()));
-                String nextActionString = current.selectActionWithoutBacktrack();
+                String nextActionString = current.selectActionAndMutatedMethod();
                 Action nextAction = EvolutionFramework.getActionContainer().get(nextActionString);
                 State nextState = nextAction.proceedAction(current.getTarget(), mutateAcceptHistory);
                 iterationCount ++;
@@ -76,9 +76,9 @@ public class EvolutionFramework {
                     ClassmingEntry.showListElement(current.getTarget().getMethodLiveCodeString(currentCounter.getSignature()));
                     nextState.getTarget().saveCurrentClass();
                     mutateAcceptHistory.add(nextState);
-                    current.updateScore(nextActionString, distance / 1.0);
+                    current.updateMethodScore(nextActionString, distance / 1.0);
                 } else {
-                    current.updateScore(nextActionString, DEAD_END);
+                    current.updateMethodScore(nextActionString, DEAD_END);
                 }
             }
             for (State state: mutateAcceptHistory) {
