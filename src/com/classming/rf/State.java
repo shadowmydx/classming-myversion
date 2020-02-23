@@ -1,6 +1,8 @@
 package com.classming.rf;
 
+import com.classming.MethodCounter;
 import com.classming.MutateClass;
+import soot.SootMethod;
 
 import java.util.*;
 
@@ -9,6 +11,8 @@ public class State {
     private Map<String, Integer> mappingToIndex = new HashMap<>();
     private List<String> actions = new ArrayList<>();
     private List<Double> scores = new ArrayList<>();
+
+    private Map<String, List<Double>> methodScores = new HashMap<>();
 
 
     public double getCoFitnessScore() {
@@ -21,11 +25,22 @@ public class State {
 
     private double coFitnessScore;
 
+    public MethodCounter getCurrentMethod() {
+        return currentMethod;
+    }
+
+    public void setCurrentMethod(MethodCounter currentMethod) {
+        this.currentMethod = currentMethod;
+    }
+
+    private MethodCounter currentMethod;
+
     private static double exploreRate = 0.1;
     public static final String GOTO = "goto";
     public static final String BACKTRACK = "backtrack";
     public static final String LOOK_UP = "lookup";
     public static final String RETURN = "return";
+    private static final int ACTION_LIMIT = 3;
 
     public Map<String, Integer> getMappingToIndex() {
         return mappingToIndex;
@@ -61,7 +76,7 @@ public class State {
 //        mappingToIndex.put(RETURN, 3);
 //        actions.add(RETURN);
 
-        for (int i = 0; i < 3; i ++) {
+        for (int i = 0; i < ACTION_LIMIT; i ++) {
             scores.add(0.0);
         }
     }
@@ -72,6 +87,16 @@ public class State {
 
     public void setTarget(MutateClass target) {
         this.target = target;
+        if (target != null) {
+            List<String> liveMethod = target.getLiveMethodSignature();
+            for (String eachMethod : liveMethod) {
+                List<Double> currentScore = new ArrayList<>();
+                for (int i = 0; i < ACTION_LIMIT; i++) {
+                    currentScore.add(0.0);
+                }
+                this.methodScores.put(eachMethod, currentScore);
+            }
+        }
     }
 
     private MutateClass target;
@@ -95,6 +120,44 @@ public class State {
         for (int i = 0; i < scores.size(); i ++) {
             if (maxScore == scores.get(i)) {
                 candidates.add(i);
+            }
+        }
+        int resultIndex = candidates.get(random.nextInt(candidates.size()));
+        return actions.get(resultIndex);
+    }
+
+    public void updateMethodScore(String action, double reward) {
+        MethodCounter currentMethod = this.target.getCurrentMethod();
+        List<Double> currentScore = methodScores.get(currentMethod.getSignature());
+        int scoreIndex = mappingToIndex.get(action);
+        double previous = currentScore.get(scoreIndex);
+        previous += RfFramework.ALPHA * (reward - previous);
+        currentScore.set(scoreIndex, previous);
+    }
+
+    public static MethodCounter generateRankBasedDistribution() {
+        String signature = "";
+
+        return new MethodCounter(signature, 0);
+    }
+
+    public String selectActionAndMutatedMethod() {
+        MethodCounter counter = this.target.getMethodByDistribution();
+        this.target.setCurrentMethod(counter);
+        Random random = new Random();
+        if (random.nextDouble() < exploreRate) {
+            return actions.get(random.nextInt(actions.size() - 1) + 1);
+        }
+        List<Double> currentScore = methodScores.get(counter.getSignature());
+        List<Double> newScore = new ArrayList<>();
+        for (int i = 1; i < currentScore.size(); i ++) {
+            newScore.add(currentScore.get(i));
+        }
+        double maxScore = Collections.max(newScore);
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 0; i < newScore.size(); i ++) {
+            if (maxScore == newScore.get(i)) {
+                candidates.add(i + 1);
             }
         }
         int resultIndex = candidates.get(random.nextInt(candidates.size()));

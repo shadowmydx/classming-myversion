@@ -1,5 +1,6 @@
 package com.classming;
 
+import com.classming.rf.Tool;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JIfStmt;
@@ -32,6 +33,8 @@ public class MutateClass {
 
     private List<String> classPureInstructionFlow;
 
+    private List<Double> methodDistribution = new ArrayList<>();
+
     public SootClass getSootClass() {
         return sootClass;
     }
@@ -41,6 +44,14 @@ public class MutateClass {
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
         initializeSootClass(null);
+    }
+
+    public List<String> getLiveMethodSignature() {
+        List<String> result = new ArrayList<>();
+        for (SootMethod method: this.liveMethod) {
+            result.add(method.getSignature());
+        }
+        return result;
     }
 
     public void initializeSootClass(List<MethodCounter> previousMutationCounter) throws IOException {
@@ -93,6 +104,68 @@ public class MutateClass {
         SootClass newClass = Main.loadTargetClass(this.getClassName());
         this.setSootClass(newClass);
         this.initializeSootClass(this.mutationCounter);
+    }
+
+    public MethodCounter getMethodByDistribution() {
+        if (this.methodDistribution.size() == 0) {
+            double totalInstructions = 0.0;
+            for (String method: this.methodOriginalStmtList.keySet()) {
+                totalInstructions += this.methodOriginalStmtList.get(method).size();
+            }
+            for (String method: this.methodOriginalStmtList.keySet()) {
+                this.methodDistribution.add(this.methodOriginalStmtList.get(method).size() / totalInstructions);
+            }
+        }
+        List<String> signatures = new ArrayList<>(this.methodOriginalStmtList.keySet());
+        String currentMethod = (String)Tool.randomSelectionByDistribution(this.methodDistribution, signatures);
+        MethodCounter counter = new MethodCounter(currentMethod, 0);
+        counter.setSignature(currentMethod);
+        return counter;
+    }
+
+    public MutateClass evoGotoIteration(boolean shouldSet) throws IOException {
+        if (shouldSet) {
+            MethodCounter current = this.getMethodByDistribution();
+            this.setCurrentMethod(current);
+        }
+        this.saveCurrentClass(); // save current class
+        try {
+            this.gotoMutation(this.getCurrentMethod().getSignature()); // change current topology
+            return this.deepCopy(this.getCurrentMethod().getSignature()); // applied change to new class
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public MutateClass evoSwitchIteration(boolean shouldSet) throws IOException {
+        if (shouldSet) {
+            MethodCounter current = this.getMethodByDistribution();
+            this.setCurrentMethod(current);
+        }
+        this.saveCurrentClass(); // save current class
+        try {
+            this.lookUpSwitchMutation(this.getCurrentMethod().getSignature()); // change current topology
+            return this.deepCopy(this.getCurrentMethod().getSignature()); // applied change to new class
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public MutateClass evoReturnIteration(boolean shouldSet) throws IOException {
+        if (shouldSet) {
+            MethodCounter current = this.getMethodByDistribution();
+            this.setCurrentMethod(current);
+        }
+        this.saveCurrentClass(); // save current class
+        try {
+            this.returnMutation(this.getCurrentMethod().getSignature()); // change current topology
+            return this.deepCopy(this.getCurrentMethod().getSignature()); // applied change to new class
+        } catch (Exception e) {
+//            e.printStackTrace();
+            return null;
+        }
     }
 
     public MutateClass iteration() throws IOException {
