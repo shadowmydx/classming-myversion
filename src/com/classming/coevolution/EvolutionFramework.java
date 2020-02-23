@@ -45,7 +45,8 @@ public class EvolutionFramework {
         }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args);
+        List<MethodCounter> mc = ClassmingEntry.readMutationCounter(classPath);
+        mutateClass.initialize(className, args, mc);
         List<State> mutateAcceptHistory = new ArrayList<>();
         List<State> mutateRejectHistory = new ArrayList<>(); // once accpeted but get out
         List<Double> averageDistance = new ArrayList<>();

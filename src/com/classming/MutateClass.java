@@ -39,11 +39,11 @@ public class MutateClass {
         return sootClass;
     }
 
-    public void initialize(String className, String[] args) throws IOException {
+    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter) throws IOException {
         this.activeArgs = args;
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
-        initializeSootClass(null);
+        initializeSootClass(previousMutationCounter);
     }
 
     public List<String> getLiveMethodSignature() {
@@ -597,9 +597,9 @@ public class MutateClass {
         this.covScore = covScore;
     }
 
-
-
-
+    public List<MethodCounter> getMutationCounter() {
+        return mutationCounter;
+    }
 
     public String getBackPath() {
         return backPath;
@@ -632,7 +632,7 @@ public class MutateClass {
     public static void main(String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize("com.classming.Hello", args);
+        mutateClass.initialize("com.classming.Hello", args, null);
         mutateClass.sortByPotential();
         MethodCounter counter = mutateClass.getMethodToMutate();
         List<Stmt> liveCode = mutateClass.getMethodLiveCode(counter.getSignature());

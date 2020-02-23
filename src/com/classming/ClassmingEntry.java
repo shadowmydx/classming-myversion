@@ -12,11 +12,8 @@ import com.classming.record.Recover;
 import com.classming.rf.State;
 import soot.jimple.Stmt;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -49,7 +46,8 @@ public class ClassmingEntry {
         }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args);
+        List<MethodCounter> mc = readMutationCounter(classPath);
+        mutateClass.initialize(className, args, mc);
         List<MutateClass> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         List<Double> averageDistance = new ArrayList<>();
@@ -77,14 +75,17 @@ public class ClassmingEntry {
                     showListElement(previousClass.getMethodLiveCodeString(current.getSignature()));
                     mutateAcceptHistory.add(newOne);
                     mutateClass = newOne;
+                    dumpMutationCounter(newOne, classPath);
                 } else {
                     newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
+                    dumpMutationCounter(mutateClass, classPath);
                 }
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
+                dumpMutationCounter(mutateClass, classPath);
 //                System.out.println(mutateClass.getBackPath());
             }
         }
@@ -101,6 +102,41 @@ public class ClassmingEntry {
         calculateAverageDistance(mutateAcceptHistory);
     }
 
+    public static void dumpMutationCounter(MutateClass m, String classPath){
+        try {
+            File file = new File(classPath + "MutationCounter.log");
+            if (!file.exists())
+                file.createNewFile();
+            FileWriter fw = new FileWriter(file.getPath(), false);
+            for(MethodCounter mc : m.getMutationCounter()){
+                fw.write(mc.getSignature()+","+mc.getCount()+"\n");
+            }
+            fw.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static List<MethodCounter> readMutationCounter(String classPath){
+        List<MethodCounter> mc = new ArrayList<>();
+        try {
+            File file = new File(classPath + "MutationCounter.log");
+            FileReader fr = new FileReader(file.getPath());
+            BufferedReader br = new BufferedReader(fr);
+            String line = null;
+            while((line = br.readLine())!=null){
+                String[] temp = line.split("[,]");
+                String sig = temp[0];
+                int count = Integer.parseInt(temp[1]);
+                mc.add(new MethodCounter(sig, count));
+            }
+            fr.close();
+            br.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return mc;
+    }
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
         List<State> states = new ArrayList<>();

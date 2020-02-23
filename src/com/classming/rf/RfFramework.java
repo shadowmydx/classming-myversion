@@ -34,7 +34,7 @@ public class RfFramework {
     public void process(String className, int iterationCount, String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args);
+        mutateClass.initialize(className, args, null);
         List<State> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         List<Double> averageDistance = new ArrayList<>();
