@@ -43,6 +43,7 @@ public class EvolutionFramework {
         if(dependencies != null && !dependencies.equals("")){
             Main.setDependencies(dependencies);
         }
+        MutateClass.switchSelectStrategy();
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
         mutateClass.initialize(className, args);
