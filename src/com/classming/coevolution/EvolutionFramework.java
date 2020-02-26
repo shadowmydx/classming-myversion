@@ -10,6 +10,7 @@ import com.classming.record.Recover;
 import com.classming.rf.*;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 
 public class EvolutionFramework {
@@ -37,6 +38,9 @@ public class EvolutionFramework {
     }
 
     public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies) throws IOException {
+        PrintStream newStream=new PrintStream("./"+className+".log");
+        System.setOut(newStream);
+        System.setErr(newStream);
         if(classPath != null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -104,6 +108,13 @@ public class EvolutionFramework {
             }
         }
 
+        for(int i = 1; i < mutateAcceptHistory.size(); i++){
+            ClassmingEntry.dumpSingleMutateClass(mutateAcceptHistory.get(i).getTarget(),"./AcceptHistory/");
+        }
+        for(int i = 0; i < mutateRejectHistory.size(); i++){
+            ClassmingEntry.dumpSingleMutateClass(mutateRejectHistory.get(i).getTarget(), "./RejectHistory/");
+        }
+
         ClusterTool.getEvoClusterData(mutateAcceptHistory, mutateRejectHistory);
 
         List<Double> totalScore = new ArrayList<>();
@@ -128,7 +139,42 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        fwk.process("com.classming.Hello", 1000, args, null, "");
+//        fwk.process("com.classming.Hello", 1000, args, null, "");
+        fwk.process("avrora.Main", 2000,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
+        fwk.process("org.apache.batik.apps.rasterizer.Main", 2000,null,
+                "./sootOutput/batik-all/",null);
+        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 2000,
+                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+//        fwk.process("org.apache.fop.cli.Main", 2000,
+//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+//                "./sootOutput/fop/",
+//                "dependencies/xmlgraphics-commons-1.3.1.jar;" +
+//                        "dependencies/commons-logging.jar;" +
+//                        "dependencies/avalon-framework-4.2.0.jar;" +
+//                        "dependencies/batik-all.jar;" +
+//                        "dependencies/commons-io-1.3.1.jar");
+//        fwk.process("org.python.util.jython", 2000,
+//                new String[]{"sootOutput/jython/hello.py"},
+//                "./sootOutput/jython/",
+//                "dependencies/guava-r07.jar;" +
+//                        "dependencies/constantine.jar;" +
+//                        "dependencies/jnr-posix.jar;" +
+//                        "dependencies/jaffl.jar;" +
+//                        "dependencies/jline-0.9.95-SNAPSHOT.jar;" +
+//                        "dependencies/antlr-3.1.3.jar;" +
+//                        "dependencies/asm-3.1.jar");
+//        fwk.process("net.sourceforge.pmd.PMD", 2000,
+//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+//                "./sootOutput/pmd-4.2.5/",
+//                "dependencies/jaxen-1.1.1.jar;" +
+//                        "dependencies/asm-3.1.jar");  // pmd no accept
+        fwk.process("org.sunflow.Benchmark", 2000,
+                new String[]{"-bench","2","256"},
+                "./sootOutput/sunflow-0.07.2/",
+                "dependencies/janino-2.5.15.jar");
+
     }
 
 }

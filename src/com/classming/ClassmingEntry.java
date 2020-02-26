@@ -74,18 +74,20 @@ public class ClassmingEntry {
                     showListElement(currentLiveCode);
                     showListElement(previousClass.getMethodLiveCodeString(current.getSignature()));
                     mutateAcceptHistory.add(newOne);
+                    dumpSingleMutateClass(newOne, "./AcceptHistory/");
                     mutateClass = newOne;
                     dumpMutationCounter(newOne, classPath);
                 } else {
                     newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
+                    dumpSingleMutateClass(newOne, "./RejectHistory/");
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                    dumpMutationCounter(mutateClass, classPath);
+                    dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
                 }
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                dumpMutationCounter(mutateClass, classPath);
+                dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
 //                System.out.println(mutateClass.getBackPath());
             }
         }
@@ -93,8 +95,8 @@ public class ClassmingEntry {
         ClusterTool.getClassmingClusterData(mutateAcceptHistory);
 
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
-        dumpAcceptHistory(mutateAcceptHistory);
-        dumpRejectHistory(mutateRejectHistory);
+//        dumpAcceptHistory(mutateAcceptHistory);
+//        dumpRejectHistory(mutateRejectHistory);
         System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
@@ -111,6 +113,7 @@ public class ClassmingEntry {
             for(MethodCounter mc : m.getMutationCounter()){
                 fw.write(mc.getSignature()+","+mc.getCount()+"\n");
             }
+            fw.write(m.getBackPath());  // for emergency
             fw.close();
         }catch (Exception e){
             e.printStackTrace();
@@ -121,10 +124,12 @@ public class ClassmingEntry {
         List<MethodCounter> mc = new ArrayList<>();
         try {
             File file = new File(classPath + "MutationCounter.log");
+            if(!file.exists())
+                return null;
             FileReader fr = new FileReader(file.getPath());
             BufferedReader br = new BufferedReader(fr);
             String line = null;
-            while((line = br.readLine())!=null){
+            while((line = br.readLine())!=null && line.contains(",")){
                 String[] temp = line.split("[,]");
                 String sig = temp[0];
                 int count = Integer.parseInt(temp[1]);
@@ -191,6 +196,17 @@ public class ClassmingEntry {
         System.out.println(builder);
     }
 
+    // targetDirectory should be "./AcceptHistory/" or "./RejectHistory/"
+    public static void dumpSingleMutateClass(MutateClass mc, String targetDirectory){
+        String backPath = mc.getBackPath();
+        File source = new File(backPath);
+        File dest = new File(backPath.replace("./tmp/", targetDirectory));
+        try {
+            Files.copy(source.toPath(), dest.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void dumpAcceptHistory(List<MutateClass> list) {
         File file = new File("AcceptHistory");
@@ -209,9 +225,6 @@ public class ClassmingEntry {
             }
         }
     }
-
-
-
 
     public static void dumpRejectHistory(List<MutateClass> list){
         File file = new File("RejectHistory");
@@ -232,13 +245,13 @@ public class ClassmingEntry {
         long startTime = System.currentTimeMillis();
 
 //        process("com.classming.Hello", 1010, args, null, "");
-        process("avrora.Main", 2000,
-                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-                "./sootOutput/avrora-cvs-20091224/",null);
-        process("org.apache.batik.apps.rasterizer.Main", 2000,null,
-                "./sootOutput/batik-all/",null);
-        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 2000,
-                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+//        process("avrora.Main", 200,
+//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+//                "./sootOutput/avrora-cvs-20091224/",null);
+//        process("org.apache.batik.apps.rasterizer.Main", 2,null,
+//                "./sootOutput/batik-all/",null);
+//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 632,
+//                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
 //        process("org.apache.fop.cli.Main", 500,
 //                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
 //                "./sootOutput/fop/",
