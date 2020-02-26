@@ -22,6 +22,12 @@ public class MutateClass {
     private static int gotoVarCount = 1;
     private static int loopLimit = 5;
     private static boolean noBegin = false;
+    private static boolean shouldRandom = false;
+
+    public static void switchSelectStrategy() {
+        shouldRandom = !shouldRandom;
+    }
+
 
     public List<String> getClassPureInstructionFlow() {
         return classPureInstructionFlow;
@@ -292,6 +298,9 @@ public class MutateClass {
 //        Body methodBody = this.methodLiveBody.get(signature);
 //        UnitPatchingChain units = methodBody.getUnits();
         Random rand = new Random();
+        if (shouldRandom) {
+            return rand.nextInt(targetLiveCode.size());
+        }
         int[] candidatesIndex = new int[candidates];
         for (int i = 0; i < candidatesIndex.length; i++) {
             candidatesIndex[i] = rand.nextInt(targetLiveCode.size());
@@ -316,6 +325,9 @@ public class MutateClass {
             int tpIndex = random.nextInt(this.methodOriginalStmtList.get(signature).size() - 1) + 1;
             double rand = random.nextDouble();
             Stmt nextStmt = this.methodOriginalStmtList.get(signature).get(tpIndex);
+            if (shouldRandom) {
+                return nextStmt;
+            }
             if (!UsedStatementHelper.queryIfHasInstructionsAlready(className, signature, nextStmt.toString())) {
                 return nextStmt;
             }
