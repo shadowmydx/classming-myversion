@@ -40,7 +40,7 @@ public class State {
     public static final String BACKTRACK = "backtrack";
     public static final String LOOK_UP = "lookup";
     public static final String RETURN = "return";
-    private static final int ACTION_LIMIT = 3;
+    private static final int ACTION_LIMIT = 4;
 
     public Map<String, Integer> getMappingToIndex() {
         return mappingToIndex;
@@ -73,8 +73,8 @@ public class State {
         actions.add(GOTO);
         mappingToIndex.put(LOOK_UP, 2);
         actions.add(LOOK_UP);
-//        mappingToIndex.put(RETURN, 3);
-//        actions.add(RETURN);
+        mappingToIndex.put(RETURN, 3);
+        actions.add(RETURN);
 
         for (int i = 0; i < ACTION_LIMIT; i ++) {
             scores.add(0.0);
@@ -135,8 +135,10 @@ public class State {
         currentScore.set(scoreIndex, previous);
     }
 
-    public static MethodCounter generateRankBasedDistribution() {
-        String signature = "";
+    public MethodCounter generateRankBasedDistribution() {
+        String signature = (String)this.methodScores.keySet().toArray()[0];
+        double maxValue = Collections.max(this.methodScores.get(signature));
+        List<String> signatures = new ArrayList<>(this.methodScores.keySet());
 
         return new MethodCounter(signature, 0);
     }
