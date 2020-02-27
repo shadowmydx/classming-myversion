@@ -26,6 +26,26 @@ public class Tool {
         return states.get(distribution.size()-1);
     }
 
+    public static Object randomSelectionByDistribution(List<Double> distribution, List states){
+
+        distribution = Renormalization(distribution);
+
+        Random random = new Random();
+        double aDouble = random.nextDouble();
+//        System.out.println(aDouble);
+
+        double cumulative = 0;
+        for (int i = 0; i < distribution.size(); i++) {
+            if( aDouble >= cumulative && aDouble <= (cumulative + distribution.get(i))) {
+                return states.get(i);
+            }else{
+                cumulative += distribution.get(i);
+            }
+        }
+        // avoid the accumulative error
+        return states.get(distribution.size()-1);
+    }
+
 
     private static List<Double> Renormalization (List<Double> distribution) {
         double total = 0;
