@@ -10,9 +10,6 @@ import java.util.*;
 
 public class ClassesCluster {
 
-    private static String packetName = "com.classming";
-    private static String className = "Hello";
-
     public static void main(String[] args) throws Exception {
         int size = clusterAllIn("tmp");
         System.out.println("total " + size + " clusters");
@@ -41,13 +38,6 @@ public class ClassesCluster {
         Main.initial(null);
         String sootClassPath = directory + File.pathSeparator + System.getProperty("java.class.path");
         Options.v().set_soot_classpath(sootClassPath);
-
-        String dir = getOutputDir(directory);
-        File file = new File(dir);
-        if (!file.exists() && !file.mkdirs()) {
-            System.err.println("fail to make directory: " + dir);
-            System.exit(-1);
-        }
     }
 
     private static List<MutateClass> loadClasses(String directory) {
@@ -63,12 +53,13 @@ public class ClassesCluster {
             if (!name.endsWith(".class"))
                 continue;
             String srcPath = directory + "/" + name;
-            String dstPath = getOutputDir(directory) + "/" + className + ".class";
+            String dstPath = getOutputDir(directory, name);
+            createIfNotExist(dstPath);
             System.out.printf("load class %04.2f%%\n", (i + 1.0) / size * 100);
             copy(srcPath, dstPath);
             MutateClass mClass = new MutateClass();
             try {
-                mClass.initialize(packetName + "." + className, null);
+                mClass.initialize(getExecuteName(name), null);
                 list.add(mClass);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -89,8 +80,25 @@ public class ClassesCluster {
         }
     }
 
-    private static String getOutputDir(String directory) {
-        return (directory + "/" + packetName).replaceAll("\\.", "/");
+    private static String getOutputDir(String directory, String fileName) {
+        String[] slice = fileName.split("\\.");
+        StringBuilder s = new StringBuilder(directory);
+        int size = slice.length;
+        for (int i = 1; i < size - 2; i++)
+            s.append('/').append(slice[i]);
+        s.append('/').append(slice[size - 2]).append(".class");
+        return s.toString();
+    }
+
+    private static String getExecuteName(String fileName) {
+        int from = fileName.indexOf('.');
+        int to = fileName.lastIndexOf('.');
+        return fileName.substring(from + 1, to);
+    }
+
+    private static boolean createIfNotExist(String dir) {
+        File file = new File(dir);
+        return file.exists() || file.mkdirs();
     }
 
     private static class Cluster {
