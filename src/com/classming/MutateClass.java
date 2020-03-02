@@ -45,11 +45,11 @@ public class MutateClass {
         return sootClass;
     }
 
-    public void initialize(String className, String[] args) throws IOException {
+    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter) throws IOException {
         this.activeArgs = args;
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
-        initializeSootClass(null);
+        initializeSootClass(previousMutationCounter);
     }
 
     public List<String> getLiveMethodSignature() {
@@ -477,7 +477,7 @@ public class MutateClass {
         List<IntConstant> lookUpValues = new ArrayList<>();
         List<Stmt> labels = new ArrayList<>();  // nops
         List<Stmt> selectedTargetPoints = new ArrayList<>();  // targets for lookUp values
-        int gotoVarCountCopy = gotoVarCount - 1;  // value of _M
+        int gotoVarCountCopy = loopLimit;  // value of _M
         for (int i = 0; i < caseNum; i++){
             lookUpValues.add(IntConstant.v(--gotoVarCountCopy));
             Stmt tempTargetPoint = selectTargetPoints(signature);
@@ -507,7 +507,6 @@ public class MutateClass {
         units.insertBeforeNoRedirect(defaultNop, defaultTargetPoint);
         JLookupSwitchStmt switchStmt = new JLookupSwitchStmt(newVar, lookUpValues, labels, defaultNop);
 
-
         Stmt skipSwitch = Jimple.v().newNopStmt();
         Value rightValue = IntConstant.v(loopLimit);
         AssignStmt assign = Jimple.v().newAssignStmt(newVar, rightValue);
@@ -516,19 +515,12 @@ public class MutateClass {
         AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
         IfStmt ifGoto = Jimple.v().newIfStmt(cond, skipSwitch);
 
-//        Iterator<Unit> iter = units.snapshotIterator();
-//        Stmt firstStmt = (Stmt)iter.next();
         units.insertBefore(assign, liveCode.get(0));
         Stmt printStmt = (Stmt)units.getSuccOf(liveCode.get(hookingPoint));
         units.insertAfter(skipSwitch, printStmt);
         units.insertAfter(switchStmt, printStmt);
         units.insertAfter(ifGoto, printStmt);
         units.insertAfter(substmt, printStmt);
-//        units.insertBeforeNoRedirect(substmt, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(ifGoto, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(switchStmt, liveCode.get(hookingPoint));
-//        units.insertBeforeNoRedirect(skipSwitch, liveCode.get(hookingPoint));
-
     }
 
 
@@ -617,9 +609,9 @@ public class MutateClass {
         this.covScore = covScore;
     }
 
-
-
-
+    public List<MethodCounter> getMutationCounter() {
+        return mutationCounter;
+    }
 
     public String getBackPath() {
         return backPath;
@@ -652,7 +644,7 @@ public class MutateClass {
     public static void main(String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize("com.classming.Hello", args);
+        mutateClass.initialize("com.classming.Hello", args, null);
         mutateClass.sortByPotential();
         MethodCounter counter = mutateClass.getMethodToMutate();
         List<Stmt> liveCode = mutateClass.getMethodLiveCode(counter.getSignature());

@@ -205,6 +205,7 @@ public class Main {
             }
         }
 //        System.out.println("getExecutedLiveInstructions: Start!");
+//        boolean noOutput = true;
         try {
             Process p = Runtime.getRuntime().exec(cmd);
             final InputStream is1 = p.getInputStream();
@@ -213,7 +214,9 @@ public class Main {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
-                    while ((line2 = br2.readLine()) !=  null ){}
+                    while ((line2 = br2.readLine()) !=  null ){
+//                        System.out.println(line2);
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -230,6 +233,7 @@ public class Main {
             try {
                 String line1 = null;
                 while ((line1 = br1.readLine()) != null) {
+//                    noOutput = false;
 //                        System.out.println(line1);
                     if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
                         String[] elements = line1.split("[*]+");
@@ -254,6 +258,9 @@ public class Main {
             e.printStackTrace();
         }
 //        System.out.println("getExecutedLiveInstructions: Finish!");
+//        if(noOutput){
+//            System.out.println("********************Program has no output********************");
+//        }
         return usedStmt;
     }
 
@@ -275,7 +282,9 @@ public class Main {
                 BufferedReader br2 = new  BufferedReader(new  InputStreamReader(is2));
                 try {
                     String line2 = null ;
-                    while ((line2 = br2.readLine()) !=  null ){}
+                    while ((line2 = br2.readLine()) !=  null ){
+//                        System.out.println(line2);
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -406,18 +415,80 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-	// write your code here
         initial(args);
-//        SootClass c = loadTargetClass("com.classming.Hello");
         SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method: d) {
             method.retrieveActiveBody();
         }
-        SootMethod test = d.get(1);
-        System.out.println(test.getSignature());
+        SootMethod test = d.get(2);
         Body body = test.getActiveBody();
         UnitPatchingChain units = body.getUnits();
+
+        // Insert return and goto mutator
+        Random random = new Random();
+        int returnTargetIndex = random.nextInt(units.size()-1); // exclude last stmt
+        returnTargetIndex = 0;
+        Unit returnTarget = null;
+        int gotoTargetIndex = random.nextInt(units.size()-1);
+        Unit gotoTarget = null;
+        Stmt returnNop = Jimple.v().newNopStmt();
+        Stmt gotoNop = Jimple.v().newNopStmt();
+        int i = 0;
+        for(Unit unit: units){
+            if(i==returnTargetIndex)
+                returnTarget = unit;
+            if(i==gotoTargetIndex)
+                gotoTarget = unit;
+            i++;
+        }
+        Local returnNewVar = Jimple.v().newLocal("_M"+"_r", IntType.v());
+        Local gotoNewVar = Jimple.v().newLocal("_M"+"_g", IntType.v());
+        body.getLocals().add(returnNewVar);
+        body.getLocals().add(gotoNewVar);
+        AssignStmt assign = Jimple.v().newAssignStmt(returnNewVar, IntConstant.v(1)); // _M = 1
+        SubExpr sub = Jimple.v().newSubExpr(returnNewVar, IntConstant.v(1)); // _M-1
+        AssignStmt substmt = Jimple.v().newAssignStmt(returnNewVar, sub); // _M = _M-1
+        ConditionExpr cond = Jimple.v().newLeExpr(returnNewVar, IntConstant.v(0)); // if _M <= 0
+        IfStmt ifGoto = Jimple.v().newIfStmt(cond, returnNop); // if _M <= 0 goto nop
+
+        AssignStmt assign2 = Jimple.v().newAssignStmt(gotoNewVar, IntConstant.v(5)); // _M = 5
+        SubExpr sub2 = Jimple.v().newSubExpr(gotoNewVar, IntConstant.v(1)); // _M-1
+        AssignStmt substmt2 = Jimple.v().newAssignStmt(gotoNewVar, sub2); // _M = _M-1
+        ConditionExpr cond2 = Jimple.v().newGeExpr(gotoNewVar, IntConstant.v(0)); // if _M >= 0
+        IfStmt ifGoto2 = Jimple.v().newIfStmt(cond2, gotoNop); // if _M >= 0 goto nop
+        for(Unit unit: units){
+            if (unit.toString().contains("return") && !unit.toString().contains("goto")){
+                units.insertBeforeNoRedirect(returnNop, unit);
+                break;
+            }
+        }
+
+        units.insertBeforeNoRedirect(gotoNop, gotoTarget);
+        units.insertBefore(assign, units.getFirst());
+        units.insertBefore(assign2, units.getFirst());
+        units.insertAfter(ifGoto, returnTarget);
+        units.insertAfter(substmt, returnTarget);
+        units.insertAfter(ifGoto2, returnTarget);
+        units.insertAfter(substmt2, returnTarget);
+
+        // output
+        OutputStream streamOut = new JasminOutputStream(new FileOutputStream("sootOutput\\com\\classming\\Hello.class"));
+        PrintWriter writerOut = new PrintWriter(new OutputStreamWriter(streamOut));
+        JasminClass jasminClass = new soot.jimple.JasminClass(c);
+        jasminClass.print(writerOut);
+        writerOut.flush();
+        streamOut.close();
+
+//        // read again doesn't work
+//        SootClass c2 = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
+//        List<SootMethod> d2 = c2.getMethods();
+//        for (SootMethod method: d2) {
+//            method.retrieveActiveBody();
+//        }
+//        Body body2 = d2.get(2).getActiveBody();
+//        UnitPatchingChain units2 = body2.getUnits();
+
 
 //        Local newVar = Jimple.v().newLocal("_M", IntType.v());
 //        Value rightValue = IntConstant.v(1);
@@ -427,19 +498,25 @@ public class Main {
 //        ConditionExpr cond = Jimple.v().newGeExpr(newVar, IntConstant.v(0));
 //        AssignStmt substmt = Jimple.v().newAssignStmt(newVar, sub);
 //        IfStmt ifGoto = Jimple.v().newIfStmt(cond, nop);
-        Iterator<Unit> iter = units.snapshotIterator();
 
-        List<Stmt> allStmt = new ArrayList<>();
-        int targetIndex = -1;
-        while (iter.hasNext()) {
-            allStmt.add((Stmt)iter.next());
-            if (allStmt.get(allStmt.size() - 1).toString().contains("$r8 = <java.lang.System: java.io.PrintStream out>")) {
-                targetIndex = allStmt.size() - 1;
 
-            }
-            System.out.println(allStmt.get(allStmt.size() - 1));
-        }
+
+//        Iterator<Unit> iter = units.snapshotIterator();
+//
+//        List<Stmt> allStmt = new ArrayList<>();
+//        int targetIndex = -1;
+//        while (iter.hasNext()) {
+//            allStmt.add((Stmt)iter.next());
+//            if (allStmt.get(allStmt.size() - 1).toString().contains("$r8 = <java.lang.System: java.io.PrintStream out>")) {
+//                targetIndex = allStmt.size() - 1;
+//
+//            }
+//            System.out.println(allStmt.get(allStmt.size() - 1));
+//        }
         System.out.println("===================================");
+
+
+
 //        body.getLocals().add(newVar);
 //        units.insertBeforeNoRedirect(nop, allStmt.get(allStmt.size() - 1));
 //        units.insertBefore(assign, allStmt.get(1));
@@ -504,7 +581,7 @@ public class Main {
 //
 //        Set<String> usedStmt2 = getExecutedLiveInstructions("com.classming.Hello", "void test", args);
 //        List<Stmt> result2 = getActiveInstructions(usedStmt2, "com.classming.Hello", "void test", args);
-        System.out.println("hello");
+//        System.out.println("hello");
 
     }
 

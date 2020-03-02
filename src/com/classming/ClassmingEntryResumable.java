@@ -2,23 +2,18 @@ package com.classming;
 
 import com.classming.Vector.LevenshteinDistance;
 import com.classming.Vector.MathTool;
-
 import com.classming.coevolution.ClusterTool;
-
 import com.classming.coevolution.EvolutionFramework;
-
 import com.classming.coevolution.Fitness;
 import com.classming.record.Recover;
 import com.classming.rf.State;
-import soot.jimple.Stmt;
 
 import java.io.*;
-
 import java.nio.file.Files;
 import java.util.*;
 
 
-public class ClassmingEntry {
+public class ClassmingEntryResumable {
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
@@ -48,7 +43,8 @@ public class ClassmingEntry {
         }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args, null);
+        List<MethodCounter> mc = readMutationCounter(classPath);
+        mutateClass.initialize(className, args, mc);
         List<MutateClass> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         List<Double> averageDistance = new ArrayList<>();
@@ -77,26 +73,71 @@ public class ClassmingEntry {
                     mutateAcceptHistory.add(newOne);
                     dumpSingleMutateClass(newOne, "./AcceptHistory/");
                     mutateClass = newOne;
+                    dumpMutationCounter(newOne, classPath);
                 } else {
                     newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
                     dumpSingleMutateClass(newOne, "./RejectHistory/");
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
+                    dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
                 }
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
+                dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
+//                System.out.println(mutateClass.getBackPath());
             }
         }
 
         ClusterTool.getClassmingClusterData(mutateAcceptHistory);
 
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
+//        dumpAcceptHistory(mutateAcceptHistory);
+//        dumpRejectHistory(mutateRejectHistory);
         System.out.println("Accept size is " + mutateAcceptHistory.size());
         System.out.println("Average distance is " + MathTool.mean(averageDistance));
         System.out.println("var is " + MathTool.standardDeviation(averageDistance));
         System.out.println("max is " + Collections.max(averageDistance));
         calculateAverageDistance(mutateAcceptHistory);
+    }
+
+    public static void dumpMutationCounter(MutateClass m, String classPath){
+        try {
+            File file = new File(classPath + "MutationCounter.log");
+            if (!file.exists())
+                file.createNewFile();
+            FileWriter fw = new FileWriter(file.getPath(), false);
+            for(MethodCounter mc : m.getMutationCounter()){
+                fw.write(mc.getSignature()+","+mc.getCount()+"\n");
+            }
+            fw.write(m.getBackPath());  // for emergency
+            fw.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static List<MethodCounter> readMutationCounter(String classPath){
+        List<MethodCounter> mc = new ArrayList<>();
+        try {
+            File file = new File(classPath + "MutationCounter.log");
+            if(!file.exists())
+                return null;
+            FileReader fr = new FileReader(file.getPath());
+            BufferedReader br = new BufferedReader(fr);
+            String line = null;
+            while((line = br.readLine())!=null && line.contains(",")){
+                String[] temp = line.split("[,]");
+                String sig = temp[0];
+                int count = Integer.parseInt(temp[1]);
+                mc.add(new MethodCounter(sig, count));
+            }
+            fr.close();
+            br.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return mc;
     }
 
     public static void calculateAverageDistance(List<MutateClass> accepted) {
@@ -161,6 +202,39 @@ public class ClassmingEntry {
             Files.copy(source.toPath(), dest.toPath());
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void dumpAcceptHistory(List<MutateClass> list) {
+        File file = new File("AcceptHistory");
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        // The first one is not mutant
+        for (int i = 1; i < list.size(); i++) {
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/"));
+            try {
+                Files.copy(source.toPath(), dest.toPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void dumpRejectHistory(List<MutateClass> list){
+        File file = new File("RejectHistory");
+        if (!file.exists()) { file.mkdirs(); }
+        for (int i = 0; i < list.size(); i++){
+            String backPath = list.get(i).getBackPath();
+            File source = new File(backPath);
+            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/"));
+            try{
+                Files.copy(source.toPath(), dest.toPath());
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
     }
 
