@@ -13,3 +13,5 @@ cachedir*
 /sootOutput/eclipse/configuration/org.eclipse.osgi/.*.1
 /sootOutput/eclipse/configuration/org.eclipse.osgi/.manager/.tmp*.instance
 /sootOutput/eclipse/configuration/org.eclipse.osgi/.manager/.fileTable.*
+*.state
+Logs*.zip
