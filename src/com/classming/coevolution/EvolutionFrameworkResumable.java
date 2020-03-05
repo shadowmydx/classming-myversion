@@ -78,7 +78,7 @@ public class EvolutionFrameworkResumable {
                 MutateClass newOne = nextState.getTarget();
                 if (newOne != null) {
                     int totalSize = mutateAcceptHistory.size() + mutateRejectHistory.size();
-                    System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount);
+                    System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount + ", average distance is " + MathTool.mean(averageDistance));
                     MethodCounter currentCounter = newOne.getCurrentMethod();
                     int distance = LevenshteinDistance.computeLevenshteinDistance(current.getTarget().getClassPureInstructionFlow(), newOne.getClassPureInstructionFlow());
                     averageDistance.add(distance / 1.0);
