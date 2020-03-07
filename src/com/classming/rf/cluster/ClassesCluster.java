@@ -47,15 +47,12 @@ public class ClassesCluster {
     }
 
     private static void outputClusterData() {
-        for (int minPts = 1; minPts < 5; minPts++) {
-            for (int radius = 1; radius < 10; radius++) {
-                Map<Integer, Integer> clusterCntMap = Cluster.getClusterMap(minPts, radius);
-                System.out.println("############################################");
-                System.out.printf("minPts = %d, radius = %d\n", minPts, radius);
-                System.out.println("cluster data: " + clusterCntMap);
-                System.out.println("cluster size: " + clusterCntMap.size());
-            }
-        }
+        int minPts = 1, radius = 1;
+        Map<Integer, Integer> clusterCntMap = Cluster.getClusterMap(minPts, radius);
+        System.out.println("############################################");
+        System.out.printf("minPts = %d, radius = %d\n", minPts, radius);
+        System.out.println("cluster data: " + clusterCntMap);
+        System.out.println("cluster size: " + clusterCntMap.size());
     }
 
     public static Map<Integer, Integer> getClusterCntMap(Map<MutateClass, Integer> map) {
@@ -111,7 +108,7 @@ public class ClassesCluster {
             copy(srcPath, dstPath);
             MutateClass mClass = new MutateClass();
             try {
-                mClass.initialize(getExecuteName(name), null);
+                mClass.initialize(getExecuteName(name), null, null);
             } catch (IOException e) {
                 e.printStackTrace();
             }
