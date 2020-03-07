@@ -42,13 +42,17 @@ public class ClassesCluster {
     }
 
     public static void clusterAllIn(String directory) {
-        init();
-        getInstructionFlows(directory);
+//        init();
+//        getInstructionFlows(directory);
+        outputClusterData();
+    }
+
+    private static void outputClusterData() {
         for (int minPts = 1; minPts < 5; minPts++) {
             for (int radius = 1; radius < 10; radius++) {
+                Map<Integer, Integer> clusterCntMap = Cluster.getClusterMap(minPts, radius);
                 System.out.println("############################################");
                 System.out.printf("minPts = %d, radius = %d\n", minPts, radius);
-                Map<Integer, Integer> clusterCntMap = Cluster.getClusterMap(minPts, radius);
                 System.out.println("cluster data: " + clusterCntMap);
                 System.out.println("cluster size: " + clusterCntMap.size());
             }
@@ -156,16 +160,25 @@ public class ClassesCluster {
         private static int DBScan_minPts = 3;
         private static double DBScan_radius = 5;
 
+        private static List<Point> points;
+        private static int[][] distance;
+
         public static Map<Integer, Integer> getClusterMap(int minPts, double radius) {
-            List<Point> points = loadPoints(instructionHistory);
+            if (points == null)
+                points = loadPoints(instructionHistory);
+            if (distance == null)
+                distance = loadDistance();
             List<Point> cores = new ArrayList<>();
             DBScan_minPts = minPts;
             DBScan_radius = radius;
             //find cores
-            for (Point point : points) {
+            int len = points.size();
+            for (int i = 0; i < len; i++) {
+                Point point = points.get(i);
                 int cnt = 0;
-                for (Point other : points) {
-                    if (point != other && point.distanceTo(other) < DBScan_radius)
+                for (int j = 0; j < len; j++) {
+                    Point other = points.get(j);
+                    if (point != other && distance[i][j] < DBScan_radius)
                         cnt++;
                 }
                 if (cnt >= DBScan_minPts)
@@ -190,10 +203,32 @@ public class ClassesCluster {
             return map;
         }
 
+        private static int[][] loadDistance() {
+            System.out.println("calculating distance");
+            int len = points.size();
+            int total = len * len;
+            double cnt = 0;
+            int[][] distance = new int[len][len];
+            for (int i = 0; i < len; i++) {
+                for (int j = 0; j < len; j++) {
+                    Point a = points.get(i);
+                    Point b = points.get(j);
+                    distance[i][j] = LevenshteinDistance.computeLevenshteinDistance(a.instructions, b.instructions);
+                    cnt++;
+                }
+                System.out.printf("load distance %.3f%%\n", cnt * 100 / total);
+            }
+            System.out.println("calculating finished");
+            return distance;
+        }
+
         private static List<Point> loadPoints(String directory) {
             File file = new File(directory);
             List<Point> points = new ArrayList<>();
-            for (String name : Objects.requireNonNull(file.list())) {
+            System.out.println("load points ready to start");
+            String[] fileNames = file.list();
+            for (int i = 0, len = fileNames.length; i < len; i++) {
+                String name = fileNames[i];
                 List<String> instructions = new ArrayList<>();
                 String line;
                 try {
@@ -203,7 +238,8 @@ public class ClassesCluster {
                 } catch (IOException e) {
                     System.err.println("error to load file: " + directory + "/" + name);
                 }
-                points.add(new Point(instructions));
+                points.add(new Point(i, instructions));
+                System.out.printf("load points %.2f%%\n", (i + 1.0) * 100 / len);
             }
             return points;
         }
@@ -229,11 +265,13 @@ public class ClassesCluster {
         public List<String> instructions;
         public boolean visited;
         public int clusterId;
+        public int pointId;
 
-        public Point(List<String> instructions) {
+        public Point(int pointId, List<String> instructions) {
             this.instructions = instructions;
             this.visited = false;
             this.clusterId = 0;
+            this.pointId = pointId;
         }
 
         public int distanceTo(Point other) {
