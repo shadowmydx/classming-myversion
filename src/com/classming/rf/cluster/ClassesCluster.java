@@ -42,8 +42,7 @@ public class ClassesCluster {
     }
 
     public static void clusterAllIn(String directory) {
-//        init();
-//        getInstructionFlows(directory);
+        getInstructionFlows(directory);
         outputClusterData();
     }
 
