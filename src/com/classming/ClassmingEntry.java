@@ -56,7 +56,7 @@ public class ClassmingEntry {
         mutateAcceptHistory.add(mutateClass);
         mutateClass.saveCurrentClass();
         for (int i = 0; i < iterationCount; i ++) {
-            System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i);
+            System.out.println("Current size is : " + (mutateAcceptHistory.size() + mutateRejectHistory.size()) + ", iteration is :" + i + ", average distance is " + MathTool.mean(averageDistance));
             MutateClass newOne = randomMutation(mutateClass); // sootclass has changed here for all objects.
             if (newOne != null) {
                 newOne.saveCurrentClass();
