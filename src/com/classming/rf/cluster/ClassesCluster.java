@@ -59,7 +59,7 @@ public class ClassesCluster {
             copy(srcPath, dstPath);
             MutateClass mClass = new MutateClass();
             try {
-                mClass.initialize(getExecuteName(name), null);
+                mClass.initialize(getExecuteName(name), null, null);
                 list.add(mClass);
             } catch (IOException e) {
                 e.printStackTrace();
