@@ -29,11 +29,11 @@ public class Hello {
             System.out.println("nononooooooooooooooooooooo");
         }
         print("hello1");
-        test();
+        (new Hello()).test();
         System.out.println(sum);
     }
 
-    public static void test() {
+    public void test() {
         int sum = 0;
         for (int i = 0; i < 100; i ++) {
             sum += i;
