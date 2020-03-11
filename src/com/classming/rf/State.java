@@ -14,6 +14,13 @@ public class State {
 
     private Map<String, List<Double>> methodScores = new HashMap<>();
 
+    public Map<String, List<Double>> getMethodScores() {
+        return methodScores;
+    }
+
+    public void setMethodScores(Map<String, List<Double>> methodScores) {
+        this.methodScores = methodScores;
+    }
 
     public double getCoFitnessScore() {
         return coFitnessScore;
@@ -147,23 +154,29 @@ public class State {
         MethodCounter counter = this.target.getMethodByDistribution();
         this.target.setCurrentMethod(counter);
         Random random = new Random();
-        if (random.nextDouble() < exploreRate) {
+        try{
+            if (random.nextDouble() < exploreRate) {
+                return actions.get(random.nextInt(actions.size() - 1) + 1);
+            }
+            List<Double> currentScore = methodScores.get(counter.getSignature());
+            List<Double> newScore = new ArrayList<>();
+            for (int i = 1; i < currentScore.size(); i ++) {  // may throw NullPointerException
+                newScore.add(currentScore.get(i));
+            }
+            double maxScore = Collections.max(newScore);
+            List<Integer> candidates = new ArrayList<>();
+            for (int i = 0; i < newScore.size(); i ++) {
+                if (maxScore == newScore.get(i)) {
+                    candidates.add(i + 1);
+                }
+            }
+            int resultIndex = candidates.get(random.nextInt(candidates.size()));
+            return actions.get(resultIndex);
+        }catch (NullPointerException e){
+            e.printStackTrace();
+            // if throw Exception, return random action
             return actions.get(random.nextInt(actions.size() - 1) + 1);
         }
-        List<Double> currentScore = methodScores.get(counter.getSignature());
-        List<Double> newScore = new ArrayList<>();
-        for (int i = 1; i < currentScore.size(); i ++) {
-            newScore.add(currentScore.get(i));
-        }
-        double maxScore = Collections.max(newScore);
-        List<Integer> candidates = new ArrayList<>();
-        for (int i = 0; i < newScore.size(); i ++) {
-            if (maxScore == newScore.get(i)) {
-                candidates.add(i + 1);
-            }
-        }
-        int resultIndex = candidates.get(random.nextInt(candidates.size()));
-        return actions.get(resultIndex);
     }
 
     public String selectActionWithoutBacktrack() {

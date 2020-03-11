@@ -3,6 +3,8 @@ package com.classming.rf.cluster;
 import com.classming.Main;
 import com.classming.MutateClass;
 import com.classming.Vector.LevenshteinDistance;
+import soot.G;
+import soot.Scene;
 import soot.options.Options;
 
 import java.io.*;
@@ -10,18 +12,47 @@ import java.util.*;
 
 public class ClassesCluster {
 
-    public static void main(String[] args) throws Exception {
-        int size = clusterAllIn("tmp");
-        System.out.println("total " + size + " clusters");
+    /**
+     * This variable is used to load all dependencies to ensure
+     * tested class will load the relative classes correctly
+     * <p>
+     * How to make this directory:
+     * select one of the project under sootOutput, then extract
+     * all files and folders into this directory as the root folder
+     * of packets like com.classming.Hello, then it requires there
+     * is an <em>com</em> folder directly lies on this root folder
+     * <p>
+     * Of course it is more convenient to set this variable to
+     * somewhere like <em>./environment/eclipse</em>, but since
+     * the tested classes are mixed with various classes from
+     * different projects, so I recommend you to extract all folders
+     * under each project into this single directory.
+     */
+    private static final String environment = "./environment/";
+
+    /**
+     * The folder with all the classes to be tested
+     */
+    private static final String classResources = "./testResources/";
+
+    private static final String instructionHistory = "./tmpFlow/";
+
+    public static void main(String[] args) {
+        clusterAllIn(classResources);
     }
 
-    public static int clusterAllIn(String directory) {
-        init(directory);
-        List<MutateClass> mutateClassList = loadClasses(directory);
-        Map<MutateClass, Integer> clusterIdMap = Cluster.getClusterIdMap(mutateClassList);
-        Map<Integer, Integer> clusterCntMap = getClusterCntMap(clusterIdMap);
-        System.out.println(clusterCntMap);
-        return clusterCntMap.size();
+    public static void clusterAllIn(String directory) {
+        getInstructionFlows(directory);
+        outputClusterData();
+    }
+
+    private static void outputClusterData() {
+        int minPts = 1, radius = 1;
+        Map<Integer, Integer> clusterCntMap = Cluster.getClusterMap(minPts, radius);
+        System.out.println("############################################");
+        System.out.printf("minPts = %d, radius = %d\n", minPts, radius);
+        System.out.println("cluster data: " + clusterCntMap);
+        System.out.println("cluster size: " + clusterCntMap.size());
     }
 
     public static Map<Integer, Integer> getClusterCntMap(Map<MutateClass, Integer> map) {
@@ -34,38 +65,56 @@ public class ClassesCluster {
         return clusterCntMap;
     }
 
-    private static void init(String directory) {
-        Main.initial(null);
-        String sootClassPath = directory + File.pathSeparator + System.getProperty("java.class.path");
+    private static void init() {
+        Main.setGenerated(environment);
+        String sootClassPath = environment + File.pathSeparator + System.getProperty("java.class.path");
+        Scene.v().setSootClassPath(sootClassPath);
         Options.v().set_soot_classpath(sootClassPath);
+        Scene.v().loadNecessaryClasses();
     }
 
-    private static List<MutateClass> loadClasses(String directory) {
+    private static void saveInstructionFlow(String fileName, MutateClass mClass, String directory) {
+        File dir = new File(directory);
+        if (!dir.exists() && !dir.mkdirs())
+            return;
+        try {
+            PrintWriter out = new PrintWriter(directory + "/" + fileName + ".flow");
+            for (String line : mClass.getClassPureInstructionFlow())
+                out.println(line);
+            out.flush();
+            out.close();
+        } catch (FileNotFoundException e) {
+            System.err.printf("error to save instruction flow: %s", fileName);
+        }
+    }
+
+
+    private static void getInstructionFlows(String directory) {
         File file = new File(directory);
         if (!file.exists()) {
             System.err.println("no directory " + directory + " found");
             System.exit(-1);
         }
-        List<MutateClass> list = new ArrayList<>();
         String[] names = Objects.requireNonNull(file.list());
         for (int i = 0, size = names.length; i < size; i++) {
             String name = names[i];
             if (!name.endsWith(".class"))
                 continue;
+            G.reset();
+            init();
             String srcPath = directory + "/" + name;
-            String dstPath = getOutputDir(directory, name);
+            String dstPath = getOutputDir(name);
             createIfNotExist(dstPath);
-            System.out.printf("load class %04.2f%%\n", (i + 1.0) / size * 100);
             copy(srcPath, dstPath);
             MutateClass mClass = new MutateClass();
             try {
-                mClass.initialize(getExecuteName(name), null);
-                list.add(mClass);
+                mClass.initialize(getExecuteName(name), null, null);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            saveInstructionFlow(name, mClass, instructionHistory);
+            System.out.printf("load class %s, %04.2f%%\n", name, (i + 1.0) / size * 100);
         }
-        return list;
     }
 
     private static void copy(String from, String to) {
@@ -80,9 +129,9 @@ public class ClassesCluster {
         }
     }
 
-    private static String getOutputDir(String directory, String fileName) {
+    private static String getOutputDir(String fileName) {
         String[] slice = fileName.split("\\.");
-        StringBuilder s = new StringBuilder(directory);
+        StringBuilder s = new StringBuilder(environment);
         int size = slice.length;
         for (int i = 1; i < size - 2; i++)
             s.append('/').append(slice[i]);
@@ -96,26 +145,36 @@ public class ClassesCluster {
         return fileName.substring(from + 1, to);
     }
 
-    private static boolean createIfNotExist(String dir) {
+    private static boolean createIfNotExist(String path) {
+        String dir = path.substring(0, path.lastIndexOf('/'));
         File file = new File(dir);
         return file.exists() || file.mkdirs();
     }
 
     private static class Cluster {
 
-        private static final int DBScan_minPts = 3;
-        private static final double DBScan_radius = 5;
+        private static int DBScan_minPts = 3;
+        private static double DBScan_radius = 5;
 
-        public static Map<MutateClass, Integer> getClusterIdMap(List<MutateClass> mutateClassList) {
-            List<Point> points = new LinkedList<>();
+        private static List<Point> points;
+        private static int[][] distance;
+
+        public static Map<Integer, Integer> getClusterMap(int minPts, double radius) {
+            if (points == null)
+                points = loadPoints(instructionHistory);
+            if (distance == null)
+                distance = loadDistance();
             List<Point> cores = new ArrayList<>();
-            mutateClassList.forEach(mClass -> points.add(new Point(mClass)));
-
+            DBScan_minPts = minPts;
+            DBScan_radius = radius;
             //find cores
-            for (Point point : points) {
+            int len = points.size();
+            for (int i = 0; i < len; i++) {
+                Point point = points.get(i);
                 int cnt = 0;
-                for (Point other : points) {
-                    if (point != other && point.distanceTo(other) < DBScan_radius)
+                for (int j = 0; j < len; j++) {
+                    Point other = points.get(j);
+                    if (point != other && distance[i][j] < DBScan_radius)
                         cnt++;
                 }
                 if (cnt >= DBScan_minPts)
@@ -131,12 +190,56 @@ public class ClassesCluster {
                 densityConnected(p, id, points, cores);
             }
 
-            //return map
-            Map<MutateClass, Integer> clusterIdMap = new HashMap<>();
-            for (Point p : points)
-                clusterIdMap.put(p.mClass, p.clusterId);
-            return clusterIdMap;
+            Map<Integer, Integer> map = new HashMap<>();
+            for (Point p : points) {
+                int clusterId = p.clusterId;
+                int cnt = map.getOrDefault(clusterId, 0);
+                map.put(clusterId, cnt + 1);
+            }
+            return map;
         }
+
+        private static int[][] loadDistance() {
+            System.out.println("calculating distance");
+            int len = points.size();
+            int total = len * len;
+            double cnt = 0;
+            int[][] distance = new int[len][len];
+            for (int i = 0; i < len; i++) {
+                for (int j = 0; j < len; j++) {
+                    Point a = points.get(i);
+                    Point b = points.get(j);
+                    distance[i][j] = LevenshteinDistance.computeLevenshteinDistance(a.instructions, b.instructions);
+                    cnt++;
+                }
+                System.out.printf("load distance %.3f%%\n", cnt * 100 / total);
+            }
+            System.out.println("calculating finished");
+            return distance;
+        }
+
+        private static List<Point> loadPoints(String directory) {
+            File file = new File(directory);
+            List<Point> points = new ArrayList<>();
+            System.out.println("load points ready to start");
+            String[] fileNames = file.list();
+            for (int i = 0, len = fileNames.length; i < len; i++) {
+                String name = fileNames[i];
+                List<String> instructions = new ArrayList<>();
+                String line;
+                try {
+                    BufferedReader bufferedReader = new BufferedReader(new FileReader(directory + "/" + name));
+                    while ((line = bufferedReader.readLine()) != null)
+                        instructions.add(line);
+                } catch (IOException e) {
+                    System.err.println("error to load file: " + directory + "/" + name);
+                }
+                points.add(new Point(i, instructions));
+                System.out.printf("load points %.2f%%\n", (i + 1.0) * 100 / len);
+            }
+            return points;
+        }
+
 
         private static void densityConnected(Point center, int id, List<Point> points, List<Point> cores) {
             center.visited = true;
@@ -155,20 +258,20 @@ public class ClassesCluster {
     }
 
     private static class Point {
-        public MutateClass mClass;
+        public List<String> instructions;
         public boolean visited;
         public int clusterId;
+        public int pointId;
 
-        public Point(MutateClass mClass) {
-            this.mClass = mClass;
+        public Point(int pointId, List<String> instructions) {
+            this.instructions = instructions;
             this.visited = false;
             this.clusterId = 0;
+            this.pointId = pointId;
         }
 
         public int distanceTo(Point other) {
-            List<String> aMethodLiveCode = this.mClass.getClassPureInstructionFlow();
-            List<String> bMethodLiveCode = other.mClass.getClassPureInstructionFlow();
-            return LevenshteinDistance.computeLevenshteinDistance(aMethodLiveCode, bMethodLiveCode);
+            return LevenshteinDistance.computeLevenshteinDistance(this.instructions, other.instructions);
         }
     }
 
