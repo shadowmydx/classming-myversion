@@ -30,12 +30,20 @@ public class ClusterTest {
     }
 
     public static void clusterAllIn(String directory) {
-        List<InstructionFlow> testClasses = getInstructionFlows(directory);
-        outputClusterData(testClasses);
+        Map<String, List<InstructionFlow>> seedClassesMap = getInstructionFlows(directory);
+//        System.out.println(seedClassesMap.keySet());
+
+        for(String seedName: seedClassesMap.keySet()) {
+            List<InstructionFlow> testClasses = seedClassesMap.get(seedName);
+            System.out.println("/////////////////// Test seed name: " + seedName +" //////////////////////////");
+            outputClusterData(testClasses);
+        }
+
+
     }
 
     private static void outputClusterData(List<InstructionFlow> testClasses) {
-        System.out.println("--------------------------- begin to invoke Cluster ------------------------- ");
+        System.out.println("----------- begin to invoke Cluster -------------");
 
         for (int i = 0; i < 10; i++) {
             Cluster cluster = new Cluster();
@@ -44,7 +52,7 @@ public class ClusterTest {
         }
     }
 
-    private static List<InstructionFlow> getInstructionFlows(String directory) {
+    private static Map<String, List<InstructionFlow>> getInstructionFlows(String directory) {
         File file = new File(directory);
         if (!file.exists()) {
             System.err.println("no directory " + directory + " found");
@@ -52,7 +60,8 @@ public class ClusterTest {
         }
 
         String[] names = Objects.requireNonNull(file.list());
-        List<InstructionFlow> testClasses = new ArrayList<>();
+//        List<InstructionFlow> testClasses = new ArrayList<>();
+        Map<String, List<InstructionFlow>> seedClassesMap = new HashMap<>();
 
         for (int i = 0, size = names.length; i < size; i++) {
             String name = names[i];
@@ -71,11 +80,24 @@ public class ClusterTest {
                 e.printStackTrace();
             }
 
-            testClasses.add(new InstructionFlow(mClass.getClassPureInstructionFlow()));
+            String seedName = name.substring(name.indexOf("."), name.length());
+            if(seedClassesMap.containsKey(seedName)) {
+                List<InstructionFlow> testClasses = seedClassesMap.get(seedName);
+                testClasses.add(new InstructionFlow(mClass.getClassPureInstructionFlow()));
+//                System.out.printf("Add to Map <%s>    ", seedName);
+//                System.out.printf("the size of it: %d \n", seedClassesMap.get(seedName).size());
+            } else {
+                List<InstructionFlow> testClasses = new ArrayList<>();
+                testClasses.add(new InstructionFlow(mClass.getClassPureInstructionFlow()));
+                seedClassesMap.put(seedName, testClasses);
+//                System.out.printf("Create the Map<%s>     ", seedName);
+//                System.out.printf("the size of it: %d \n", seedClassesMap.get(seedName).size());
+            }
+
             System.out.printf("load class %s, %04.2f%%\n", name, (i + 1.0) / size * 100);
         }
 
-        return testClasses;
+        return seedClassesMap;
     }
 
     private static void init() {
