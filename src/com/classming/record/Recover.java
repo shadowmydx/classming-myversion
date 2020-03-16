@@ -25,7 +25,7 @@ public class Recover {
 
     public static MutateClass recoverFromPath(MutateClass sClass) throws IOException {
         String fileName = SourceLocator.v().getFileNameFor(sClass.getSootClass(), Options.output_format_class);
-        fileName = fileName.replace("sootOutput\\", Main.getGenerated());
+        fileName = fileName.replace("sootOutput"+File.separator, Main.getGenerated());
         String backupPath = sClass.getBackPath();
         File oldFile = new File(fileName);
         File newFile = new File(backupPath);
