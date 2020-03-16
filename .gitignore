@@ -6,7 +6,7 @@
 /AcceptHistory/*
 /RejectHistory/*
 classming.iml
-TestSuite*.zip
+TestSuite*
 *.log
 cachedir*
 .tmp*.instance
@@ -15,3 +15,9 @@ cachedir*
 /sootOutput/eclipse/configuration/org.eclipse.osgi/.manager/.fileTable.*
 *.state
 Logs*.zip
+*.zip
+*EclipseStarter_backup02251143.class
+/sootOutput/avrora-cvs-20091224/Main.class
+tmpBackup*
+tmpClasses*
+findPopulationsInTemp*

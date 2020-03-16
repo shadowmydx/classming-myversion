@@ -67,7 +67,7 @@ public class Main {
 
     public static void outputClassFile(SootClass sClass) throws IOException {
         String fileName = SourceLocator.v().getFileNameFor(sClass, Options.output_format_class);
-        fileName = fileName.replace("sootOutput\\", Main.getGenerated());
+        fileName = fileName.replace("sootOutput"+File.separator, Main.getGenerated());
         File file = new File(fileName);
         String path = file.getParent();
         File folder = new File(path);
@@ -198,7 +198,7 @@ public class Main {
 
     public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath \"" + generated + "\" " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -230,9 +230,11 @@ public class Main {
             }).start();
 
             BufferedReader br1 = new BufferedReader(new InputStreamReader(is1));
+//            String allLines = "";
             try {
                 String line1 = null;
                 while ((line1 = br1.readLine()) != null) {
+//                    allLines += line1 + "\n";
 //                    noOutput = false;
 //                        System.out.println(line1);
                     if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
@@ -243,6 +245,7 @@ public class Main {
                         }
                     }
                 }
+//                System.out.println(allLines);
             } catch (IOException e) {
                     e.printStackTrace();
             } finally{
@@ -267,7 +270,7 @@ public class Main {
     public static List<String> getPureMainInstructionsFlow(String className, String[] args) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath \"" + generated + "\" " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -371,7 +374,7 @@ public class Main {
             Stmt current = (Stmt)iter.next();
             if (current.toString().contains(LOG_PREVIOUS)) { // because soot will rename variable
                 String[] elements = current.toString().split("[*]+");
-                String currentStmt = elements[3].trim().replace("\\", "");
+                String currentStmt = elements[3].trim().replace("\\", "");  // replace escape character
                 currentStmt = currentStmt.substring(0, currentStmt.length() - 2);
                 if (usedStmt.contains(currentStmt)) {
                     Stmt previous = (Stmt) (units.getPredOf(current));

@@ -17,11 +17,17 @@ import java.util.*;
 public class EvolutionFrameworkResumable {
     private static final int DEAD_END = -1;
     public static final int POPULATION_LIMIT = 20;
+    public static String cpSeparator = ":";  // classpath separator
 
     private static Action gotoAction = new GotoAction();
     private static Action lookupAction = new LookupAction();
     private static Action returnAction = new ReturnAction();
 
+    EvolutionFrameworkResumable(){
+        if(System.getProperties().getProperty("os.name").startsWith("Windows")){
+            cpSeparator = ";";
+        }
+    }
 
     public static Map<String, Action> getActionContainer() {
         return actionContainer;
@@ -39,13 +45,21 @@ public class EvolutionFrameworkResumable {
     }
 
     public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies) throws IOException {
-//        // redirect the ouput to the log file
-//        PrintStream newStream=new PrintStream("./"+className+".log");
-//        System.setOut(newStream);
-//        System.setErr(newStream);
+        int iterationLeft = readLeftIterationNum(classPath+"currentPopulation/", iterationLimit);
+        if(iterationLeft <= 0)
+            return;
+
+        // redirect the ouput to the log file
+        PrintStream newStream=new PrintStream("./"+className+(iterationLimit-iterationLeft)+".log");
+        System.setOut(newStream);
+        System.setErr(newStream);
+
+        iterationLimit = iterationLeft;
 
         if(classPath != null && !classPath.equals("")){
             Main.setGenerated(classPath);
+        }else{
+            classPath = "";
         }
         if(dependencies != null && !dependencies.equals("")){
             Main.setDependencies(dependencies);
@@ -112,33 +126,38 @@ public class EvolutionFrameworkResumable {
                     ClassmingEntry.dumpSingleMutateClass(mutateAcceptHistory.get(j).getTarget(), "./RejectHistory/");
                 }
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
-                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/");
+                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/", iterationLimit-iterationCount);
                 dumpAcceptPopulation(mutateAcceptHistory, className);
             }else{
-                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/");
+                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",  iterationLimit-iterationCount);
             }
         }
 
         ClusterTool.getEvoClusterData(mutateAcceptHistory, mutateRejectHistory);
 
         List<Double> totalScore = new ArrayList<>();
-        System.out.println("Average distance is " + MathTool.mean(averageDistance));
-        System.out.println("var is " + MathTool.standardDeviation(averageDistance));
-        System.out.println("max is " + Collections.max(averageDistance));
-        for (State state: mutateAcceptHistory) {
-            System.out.print(state.getCoFitnessScore() + " ");
-            totalScore.add(state.getCoFitnessScore());
+        try{
+            System.out.println("Average distance is " + MathTool.mean(averageDistance));
+            System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+            System.out.println("max is " + Collections.max(averageDistance));
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        System.out.println();
-        System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
-        mutateRejectHistory.addAll(mutateAcceptHistory);
-        for (State state: mutateRejectHistory) {
-            state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
-            totalScore.add(state.getCoFitnessScore());
-        }
-        System.out.println("Total average:" + MathTool.mean(totalScore));
-        System.out.println();
-        System.out.println(MathTool.mean(totalScore));
+            for (State state: mutateAcceptHistory) {
+                System.out.print(state.getCoFitnessScore() + " ");
+                totalScore.add(state.getCoFitnessScore());
+            }
+            System.out.println();
+            System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
+            mutateRejectHistory.addAll(mutateAcceptHistory);
+            for (State state: mutateRejectHistory) {
+                state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
+                totalScore.add(state.getCoFitnessScore());
+            }
+            System.out.println("Total average:" + MathTool.mean(totalScore));
+            System.out.println();
+            System.out.println(MathTool.mean(totalScore));
+
     }
 
     public static List<State> readCurrentPopulation(String populationPath, String classPath, String className, String[] args) {
@@ -155,7 +174,7 @@ public class EvolutionFrameworkResumable {
             if(dstFile.exists()){
                 dstFile.delete();
             }
-            System.out.println("Reading individual: "+f.getName());
+            System.out.println("Loading individual: "+f.getName());
             G.reset();  // important!!
             Main.initial(args);
             MutateClass mc = new MutateClass();
@@ -203,7 +222,25 @@ public class EvolutionFrameworkResumable {
         }
     }
 
-    public static void saveCurrentPopulation(List<State> stateList, String populationPath){
+    public static int readLeftIterationNum(String populationPath, int iterationLimit){
+        int leftIterationNum = iterationLimit;
+        File infoFile = new File(populationPath + "population.info");
+        if(!infoFile.exists())
+            return iterationLimit;
+        try {
+            FileReader fr = new FileReader(infoFile.getPath());
+            BufferedReader br = new BufferedReader(fr);
+            String line = br.readLine();
+            leftIterationNum = Integer.parseInt(line.split("[:]")[1]);
+            System.out.println("Iteration left: "+ leftIterationNum);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return leftIterationNum;
+
+    }
+
+    public static void saveCurrentPopulation(List<State> stateList, String populationPath, int leftIterationNum){
         File file = new File(populationPath);
         if(!file.exists()){
             file.mkdir();
@@ -214,6 +251,15 @@ public class EvolutionFrameworkResumable {
         }
         for (State s: stateList){
             saveState(s, populationPath);
+        }
+        String infoName = "population.info";
+        File f = new File(populationPath + infoName);
+        try {
+            FileWriter fw = new FileWriter(f.getPath(), false);
+            fw.write("Iteration Left:"+leftIterationNum);
+            fw.close();
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -242,40 +288,40 @@ public class EvolutionFrameworkResumable {
     public static void main(String[] args) throws IOException {
         EvolutionFrameworkResumable fwk = new EvolutionFrameworkResumable();
 //        fwk.process("com.classming.Hello", 1000, args, null, "");
-//        fwk.process("avrora.Main", 783,
-//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-//                "./sootOutput/avrora-cvs-20091224/",null);
+        fwk.process("avrora.Main", 3000,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
 //        fwk.process("org.apache.batik.apps.rasterizer.Main", 400,null,
 //                "./sootOutput/batik-all/",null);
-        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 1030,
+        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
                 new String[]{"-debug"}, "./sootOutput/eclipse/", null);
-//        fwk.process("org.apache.fop.cli.Main", 2000,
-//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
-//                "./sootOutput/fop/",
-//                "dependencies/xmlgraphics-commons-1.3.1.jar;" +
-//                        "dependencies/commons-logging.jar;" +
-//                        "dependencies/avalon-framework-4.2.0.jar;" +
-//                        "dependencies/batik-all.jar;" +
-//                        "dependencies/commons-io-1.3.1.jar");
-//        fwk.process("org.python.util.jython", 2000,
-//                new String[]{"sootOutput/jython/hello.py"},
-//                "./sootOutput/jython/",
-//                "dependencies/guava-r07.jar;" +
-//                        "dependencies/constantine.jar;" +
-//                        "dependencies/jnr-posix.jar;" +
-//                        "dependencies/jaffl.jar;" +
-//                        "dependencies/jline-0.9.95-SNAPSHOT.jar;" +
-//                        "dependencies/antlr-3.1.3.jar;" +
-//                        "dependencies/asm-3.1.jar");
+        fwk.process("org.sunflow.Benchmark", 2000,
+                new String[]{"-bench","2","256"},
+                "./sootOutput/sunflow-0.07.2/",
+                "dependencies/janino-2.5.15.jar");
+        fwk.process("org.apache.fop.cli.Main", 3000,
+                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+                "./sootOutput/fop/",
+                "dependencies/xmlgraphics-commons-1.3.1.jar" + cpSeparator +
+                        "dependencies/commons-logging.jar" + cpSeparator +
+                        "dependencies/avalon-framework-4.2.0.jar" + cpSeparator +
+                        "dependencies/batik-all.jar" + cpSeparator +
+                        "dependencies/commons-io-1.3.1.jar");
+        fwk.process("org.python.util.jython", 6000,
+                new String[]{"sootOutput/jython/hello.py"},
+                "./sootOutput/jython/",
+                "dependencies/guava-r07.jar" + cpSeparator +
+                        "dependencies/constantine.jar" + cpSeparator +
+                        "dependencies/jnr-posix.jar" + cpSeparator +
+                        "dependencies/jaffl.jar" + cpSeparator +
+                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
+                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
+                        "dependencies/asm-3.1.jar");
 //        fwk.process("net.sourceforge.pmd.PMD", 2000,
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
 //                        "dependencies/asm-3.1.jar");  // pmd no accept
-//        fwk.process("org.sunflow.Benchmark", 51,
-//                new String[]{"-bench","2","256"},
-//                "./sootOutput/sunflow-0.07.2/",
-//                "dependencies/janino-2.5.15.jar");
-    }
 
+    }
 }
