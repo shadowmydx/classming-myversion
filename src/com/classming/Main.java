@@ -222,6 +222,7 @@ public class Main {
                 }
                 finally{
                     try {
+                        br2.close();
                         is2.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -250,6 +251,7 @@ public class Main {
                     e.printStackTrace();
             } finally{
                 try {
+                    br1.close();
                     is1.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -293,6 +295,7 @@ public class Main {
                 }
                 finally{
                     try {
+                        br2.close();
                         is2.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -314,6 +317,7 @@ public class Main {
                 e.printStackTrace();
             } finally {
                 try {
+                    br1.close();
                     is1.close();
                 } catch (IOException e) {
                     e.printStackTrace();

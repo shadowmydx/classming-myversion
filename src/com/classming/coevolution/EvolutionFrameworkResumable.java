@@ -11,6 +11,7 @@ import com.classming.rf.*;
 import soot.G;
 
 import java.io.*;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -54,6 +55,7 @@ public class EvolutionFrameworkResumable {
         System.setOut(newStream);
         System.setErr(newStream);
 
+        System.out.println("Iteration left: "+ iterationLeft);
         iterationLimit = iterationLeft;
 
         if(classPath != null && !classPath.equals("")){
@@ -126,8 +128,8 @@ public class EvolutionFrameworkResumable {
                     ClassmingEntry.dumpSingleMutateClass(mutateAcceptHistory.get(j).getTarget(), "./RejectHistory/");
                 }
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
-                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/", iterationLimit-iterationCount);
                 dumpAcceptPopulation(mutateAcceptHistory, className);
+                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/", iterationLimit-iterationCount);
             }else{
                 saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",  iterationLimit-iterationCount);
             }
@@ -260,6 +262,61 @@ public class EvolutionFrameworkResumable {
             fw.close();
         }catch (Exception e){
             e.printStackTrace();
+        }
+        cleanTmpFolder();
+    }
+
+    public static void cleanTmpFolder(){
+        String targetDir = "./tmp/";
+        String[] classPath = new String[]{
+                "./sootOutput/avrora-cvs-20091224/",
+                "./sootOutput/batik-all/",
+                "./sootOutput/eclipse/",
+                "./sootOutput/sunflow-0.07.2/",
+                "./sootOutput/jython/",
+                "./sootOutput/fop/",
+                "./sootOutput/pmd-4.2.5/",
+        };
+        File target = new File("./tmpClass/");
+        if(target.exists())
+            deleteFile(target);
+        target.mkdir();
+        for(String cp: classPath){
+//            System.out.println("Processing " + cp);
+            String populationPath = cp + "currentPopulation/";
+            File population = new File(populationPath);
+            if(!population.exists())
+                continue;
+            for(File f: population.listFiles()){
+                if (f.getName().endsWith(".state")){
+                    String tmpFileName = "./tmp/" + f.getName().replace(".state", ".class");
+                    String targetName = tmpFileName.replace("./tmp/", "./tmpClass/");
+                    File source = new File(tmpFileName);
+                    File dest = new File(targetName);
+                    try{
+                        Files.copy(source.toPath(), dest.toPath());
+                    }catch(FileAlreadyExistsException e){
+//                        System.err.println("File Already Exists: " + source.getName());
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        deleteFile(new File("./tmp/"));
+        target.renameTo(new File("./tmp/"));
+    }
+
+    public static void deleteFile(File file){
+        if (file.isFile()){
+            file.delete();
+        }else{
+            String[] childFilePath = file.list();
+            for (String path:childFilePath){
+                File childFile= new File(file.getAbsoluteFile()+"/"+path);
+                deleteFile(childFile);
+            }
+            file.delete();
         }
     }
 
