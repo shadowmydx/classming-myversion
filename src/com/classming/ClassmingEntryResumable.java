@@ -14,6 +14,7 @@ import java.util.*;
 
 
 public class ClassmingEntryResumable {
+    public static String cpSeparator = ":";  // classpath separator
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
@@ -30,10 +31,10 @@ public class ClassmingEntryResumable {
     }
 
     public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
-//        // redirect the ouput to the log file
-//        PrintStream newStream=new PrintStream("./"+className+".log");
-//        System.setOut(newStream);
-//        System.setErr(newStream);
+        // redirect the ouput to the log file
+        PrintStream newStream=new PrintStream("./"+className+".log");
+        System.setOut(newStream);
+        System.setErr(newStream);
 
         if(classPath!=null && !classPath.equals("")){
             Main.setGenerated(classPath);
@@ -94,11 +95,15 @@ public class ClassmingEntryResumable {
         Recover.recoverFromPath(mutateAcceptHistory.get(0));
 //        dumpAcceptHistory(mutateAcceptHistory);
 //        dumpRejectHistory(mutateRejectHistory);
-        System.out.println("Accept size is " + mutateAcceptHistory.size());
-        System.out.println("Average distance is " + MathTool.mean(averageDistance));
-        System.out.println("var is " + MathTool.standardDeviation(averageDistance));
-        System.out.println("max is " + Collections.max(averageDistance));
-        calculateAverageDistance(mutateAcceptHistory);
+        try{
+            System.out.println("Accept size is " + mutateAcceptHistory.size());
+            System.out.println("Average distance is " + MathTool.mean(averageDistance));
+            System.out.println("var is " + MathTool.standardDeviation(averageDistance));
+            System.out.println("max is " + Collections.max(averageDistance));
+            calculateAverageDistance(mutateAcceptHistory);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     public static void dumpMutationCounter(MutateClass m, String classPath){
@@ -239,43 +244,46 @@ public class ClassmingEntryResumable {
     }
 
     public static void main(String[] args) throws IOException {
+        if(System.getProperties().getProperty("os.name").startsWith("Windows")){
+            cpSeparator = ";";
+        }
         long startTime = System.currentTimeMillis();
 
-//        process("com.classming.Hello", 1010, args, null, "");
-//        process("avrora.Main", 200,
-//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-//                "./sootOutput/avrora-cvs-20091224/",null);
-//        process("org.apache.batik.apps.rasterizer.Main", 2,null,
+//        process("com.classming.Hello", 1000, args, null, "");
+        process("avrora.Main", 3000,
+                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+                "./sootOutput/avrora-cvs-20091224/",null);
+//        process("org.apache.batik.apps.rasterizer.Main", 400,null,
 //                "./sootOutput/batik-all/",null);
-//        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 632,
-//                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
-//        process("org.apache.fop.cli.Main", 500,
-//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
-//                "./sootOutput/fop/",
-//                "dependencies/xmlgraphics-commons-1.3.1.jar;" +
-//                        "dependencies/commons-logging.jar;" +
-//                        "dependencies/avalon-framework-4.2.0.jar;" +
-//                        "dependencies/batik-all.jar;" +
-//                        "dependencies/commons-io-1.3.1.jar");
-//        process("org.python.util.jython", 500,
-//                new String[]{"sootOutput/jython/hello.py"},
-//                "./sootOutput/jython/",
-//                "dependencies/guava-r07.jar;" +
-//                        "dependencies/constantine.jar;" +
-//                        "dependencies/jnr-posix.jar;" +
-//                        "dependencies/jaffl.jar;" +
-//                        "dependencies/jline-0.9.95-SNAPSHOT.jar;" +
-//                        "dependencies/antlr-3.1.3.jar;" +
-//                        "dependencies/asm-3.1.jar");
-//        process("net.sourceforge.pmd.PMD", 500,
-//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
-//                "./sootOutput/pmd-4.2.5/",
-//                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");  // pmd no accept
+        process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
+                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
         process("org.sunflow.Benchmark", 2000,
                 new String[]{"-bench","2","256"},
                 "./sootOutput/sunflow-0.07.2/",
                 "dependencies/janino-2.5.15.jar");
+        process("org.apache.fop.cli.Main", 3000,
+                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+                "./sootOutput/fop/",
+                "dependencies/xmlgraphics-commons-1.3.1.jar" + cpSeparator +
+                        "dependencies/commons-logging.jar" + cpSeparator +
+                        "dependencies/avalon-framework-4.2.0.jar" + cpSeparator +
+                        "dependencies/batik-all.jar" + cpSeparator +
+                        "dependencies/commons-io-1.3.1.jar");
+        process("org.python.util.jython", 6000,
+                new String[]{"sootOutput/jython/hello.py"},
+                "./sootOutput/jython/",
+                "dependencies/guava-r07.jar" + cpSeparator +
+                        "dependencies/constantine.jar" + cpSeparator +
+                        "dependencies/jnr-posix.jar" + cpSeparator +
+                        "dependencies/jaffl.jar" + cpSeparator +
+                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
+                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
+                        "dependencies/asm-3.1.jar");
+//        process("net.sourceforge.pmd.PMD", 2000,
+//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+//                "./sootOutput/pmd-4.2.5/",
+//                "dependencies/jaxen-1.1.1.jar;" +
+//                        "dependencies/asm-3.1.jar");  // pmd no accept
 
 
         long endTime = System.currentTimeMillis();

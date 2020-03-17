@@ -7,6 +7,7 @@ import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,8 @@ public class Main {
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
     private static final String LIMITED_STMT = ":= @";
+
+    public static boolean forceResolveFailed = false;
 
     public static String getGenerated() {
         return generated;
@@ -407,7 +410,34 @@ public class Main {
     }
 
     public static SootClass loadTargetClass(String className) {
-        SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+        SootClass c = null;
+        boolean retry = false;
+        int tryTimes = 0;
+        do{
+            try {
+                tryTimes++;
+                c = Scene.v().forceResolve(className, SootClass.BODIES);
+                retry = false;
+            }catch (ArrayIndexOutOfBoundsException e){
+                System.out.println("Scene.v().forceResolve() Failed!!!");
+                System.out.println("Times Tried: " + tryTimes);
+                retry = true;
+                if(tryTimes > 5){
+                    // recover the original file
+                    retry = false;
+                    File originalFile = new File(generated+className.replace(".", File.separator)+"-original.class");
+                    File currentFile = new File(generated+className.replace(".", File.separator)+".class");
+                    currentFile.delete();
+                    try {
+                        Files.copy(originalFile.toPath(), currentFile.toPath());
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                    c = Scene.v().forceResolve(className, SootClass.BODIES);
+                    forceResolveFailed = true;
+                }
+            }
+        }while(retry);
 //        c.setResolvingLevel(0);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method : d) {

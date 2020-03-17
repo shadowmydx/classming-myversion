@@ -49,6 +49,12 @@ public class MutateClass {
         this.activeArgs = args;
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
+        if(Main.forceResolveFailed){
+            System.out.println("****************** ForceResolve Failed!! ******************");
+            System.out.println("***************** Recover Initial Class!! *****************");
+            previousMutationCounter = null;  // recover original class file
+            Main.forceResolveFailed = false;
+        }
         initializeSootClass(previousMutationCounter);
     }
 
@@ -109,7 +115,14 @@ public class MutateClass {
         Main.initial(activeArgs);
         SootClass newClass = Main.loadTargetClass(this.getClassName());
         this.setSootClass(newClass);
-        this.initializeSootClass(this.mutationCounter);
+        List<MethodCounter> previousMutationCounter = this.mutationCounter;
+        if(Main.forceResolveFailed){
+            System.out.println("****************** ForceResolve Failed!! ******************");
+            System.out.println("***************** Recover Initial Class!! *****************");
+            previousMutationCounter = null;  // recover original class file
+            Main.forceResolveFailed = false;
+        }
+        this.initializeSootClass(previousMutationCounter);
     }
 
     public MethodCounter getMethodByDistribution() {
