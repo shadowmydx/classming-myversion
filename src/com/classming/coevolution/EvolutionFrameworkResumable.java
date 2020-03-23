@@ -159,7 +159,7 @@ public class EvolutionFrameworkResumable {
             System.out.println("Total average:" + MathTool.mean(totalScore));
             System.out.println();
             System.out.println(MathTool.mean(totalScore));
-
+        G.reset();
     }
 
     public static List<State> readCurrentPopulation(String populationPath, String classPath, String className, String[] args) {

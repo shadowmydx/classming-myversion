@@ -7,6 +7,7 @@ import com.classming.coevolution.EvolutionFramework;
 import com.classming.coevolution.Fitness;
 import com.classming.record.Recover;
 import com.classming.rf.State;
+import soot.G;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import java.util.*;
 
 public class ClassmingEntryResumable {
     public static String cpSeparator = ":";  // classpath separator
+    public static int leftIterationNumReaded = Integer.MAX_VALUE;
 
     public static MutateClass randomMutation(MutateClass target) throws IOException {
         Random random = new Random();
@@ -31,11 +33,17 @@ public class ClassmingEntryResumable {
     }
 
     public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+        List<MethodCounter> mc = readMutationCounter(classPath);
+        if(leftIterationNumReaded <= 0)
+            return;
+        int startIteration = Math.max(iterationCount-leftIterationNumReaded, 0);
         // redirect the ouput to the log file
-        PrintStream newStream=new PrintStream("./"+className+".log");
+        PrintStream newStream=new PrintStream("./"+className+startIteration+".log");
         System.setOut(newStream);
         System.setErr(newStream);
 
+        if(leftIterationNumReaded < iterationCount)
+            iterationCount = leftIterationNumReaded;
         if(classPath!=null && !classPath.equals("")){
             Main.setGenerated(classPath);
         }
@@ -44,7 +52,6 @@ public class ClassmingEntryResumable {
         }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        List<MethodCounter> mc = readMutationCounter(classPath);
         mutateClass.initialize(className, args, mc);
         List<MutateClass> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
@@ -74,18 +81,18 @@ public class ClassmingEntryResumable {
                     mutateAcceptHistory.add(newOne);
                     dumpSingleMutateClass(newOne, "./AcceptHistory/");
                     mutateClass = newOne;
-                    dumpMutationCounter(newOne, classPath);
+                    dumpMutationCounter(newOne, classPath, iterationCount-i);
                 } else {
                     newOne.saveCurrentClass(); // backup reject
                     mutateRejectHistory.add(newOne);
                     dumpSingleMutateClass(newOne, "./RejectHistory/");
                     mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                    dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
+                    dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath, iterationCount-i);
                 }
 
             } else {
                 mutateClass = Recover.recoverFromPath(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1));
-                dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath);
+                dumpMutationCounter(mutateAcceptHistory.get(mutateAcceptHistory.size() - 1), classPath, iterationCount-i);
 //                System.out.println(mutateClass.getBackPath());
             }
         }
@@ -104,9 +111,10 @@ public class ClassmingEntryResumable {
         }catch (Exception e){
             e.printStackTrace();
         }
+        G.reset();
     }
 
-    public static void dumpMutationCounter(MutateClass m, String classPath){
+    public static void dumpMutationCounter(MutateClass m, String classPath, int leftIterationNum){
         try {
             File file = new File(classPath + "MutationCounter.log");
             if (!file.exists())
@@ -116,6 +124,7 @@ public class ClassmingEntryResumable {
                 fw.write(mc.getSignature()+","+mc.getCount()+"\n");
             }
             fw.write(m.getBackPath());  // for emergency
+            fw.write("Iteration Left:"+leftIterationNum);
             fw.close();
         }catch (Exception e){
             e.printStackTrace();
@@ -131,11 +140,16 @@ public class ClassmingEntryResumable {
             FileReader fr = new FileReader(file.getPath());
             BufferedReader br = new BufferedReader(fr);
             String line = null;
-            while((line = br.readLine())!=null && line.contains(",")){
-                String[] temp = line.split("[,]");
-                String sig = temp[0];
-                int count = Integer.parseInt(temp[1]);
-                mc.add(new MethodCounter(sig, count));
+            while((line = br.readLine())!=null){
+                if(line.contains(",")){
+                    String[] temp = line.split("[,]");
+                    String sig = temp[0];
+                    int count = Integer.parseInt(temp[1]);
+                    mc.add(new MethodCounter(sig, count));
+                }else if(line.contains(":")){
+                    leftIterationNumReaded = Integer.parseInt(line.split("[:]")[1]);
+                    System.out.println("Iteration left: "+ leftIterationNumReaded);
+                }
             }
             fr.close();
             br.close();
@@ -210,43 +224,9 @@ public class ClassmingEntryResumable {
         }
     }
 
-    public static void dumpAcceptHistory(List<MutateClass> list) {
-        File file = new File("AcceptHistory");
-        if (!file.exists()) {
-            file.mkdirs();
-        }
-        // The first one is not mutant
-        for (int i = 1; i < list.size(); i++) {
-            String backPath = list.get(i).getBackPath();
-            File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./AcceptHistory/"));
-            try {
-                Files.copy(source.toPath(), dest.toPath());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void dumpRejectHistory(List<MutateClass> list){
-        File file = new File("RejectHistory");
-        if (!file.exists()) { file.mkdirs(); }
-        for (int i = 0; i < list.size(); i++){
-            String backPath = list.get(i).getBackPath();
-            File source = new File(backPath);
-            File dest = new File(backPath.replace("./tmp/", "./RejectHistory/"));
-            try{
-                Files.copy(source.toPath(), dest.toPath());
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        }
-    }
 
     public static void main(String[] args) throws IOException {
-        if(System.getProperties().getProperty("os.name").startsWith("Windows")){
-            cpSeparator = ";";
-        }
+        cpSeparator = File.pathSeparator;
         long startTime = System.currentTimeMillis();
 
 //        process("com.classming.Hello", 1000, args, null, "");
