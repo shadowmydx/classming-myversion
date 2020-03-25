@@ -411,33 +411,33 @@ public class Main {
 
     public static SootClass loadTargetClass(String className) {
         SootClass c = null;
-        boolean retry = false;
-        int tryTimes = 0;
-        do{
-            try {
-                tryTimes++;
+//        boolean retry = false;
+//        int tryTimes = 0;
+//        do{
+//            try {
+//                tryTimes++;
                 c = Scene.v().forceResolve(className, SootClass.BODIES);
-                retry = false;
-            }catch (ArrayIndexOutOfBoundsException e){
-                System.out.println("Scene.v().forceResolve() Failed!!!");
-                System.out.println("Times Tried: " + tryTimes);
-                retry = true;
-                if(tryTimes > 5){
-                    // recover the original file
-                    retry = false;
-                    File originalFile = new File(generated+className.replace(".", File.separator)+"-original.class");
-                    File currentFile = new File(generated+className.replace(".", File.separator)+".class");
-                    currentFile.delete();
-                    try {
-                        Files.copy(originalFile.toPath(), currentFile.toPath());
-                    }catch (Exception ex){
-                        ex.printStackTrace();
-                    }
-                    c = Scene.v().forceResolve(className, SootClass.BODIES);
-                    forceResolveFailed = true;
-                }
-            }
-        }while(retry);
+//                retry = false;
+//            }catch (ArrayIndexOutOfBoundsException e){
+//                System.out.println("Scene.v().forceResolve() Failed!!!");
+//                System.out.println("Times Tried: " + tryTimes);
+//                retry = true;
+//                if(tryTimes > 5){
+//                    // recover the original file
+//                    retry = false;
+//                    File originalFile = new File(generated+className.replace(".", File.separator)+"-original.class");
+//                    File currentFile = new File(generated+className.replace(".", File.separator)+".class");
+//                    currentFile.delete();
+//                    try {
+//                        Files.copy(originalFile.toPath(), currentFile.toPath());
+//                    }catch (Exception ex){
+//                        ex.printStackTrace();
+//                    }
+//                    c = Scene.v().forceResolve(className, SootClass.BODIES);
+//                    forceResolveFailed = true;
+//                }
+//            }
+//        }while(retry);
 //        c.setResolvingLevel(0);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method : d) {
@@ -452,6 +452,13 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
+        G.reset();
+        Main.setGenerated("./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/");
+        Main.initial(args);
+        SootClass newClass = Main.loadTargetClass("org.codehaus.plexus.classworlds.launcher.Launcher");
+        Main.outputClassFile(newClass);
+
+
         initial(args);
         SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
         List<SootMethod> d = c.getMethods();

@@ -192,7 +192,9 @@ public class EvolutionFrameworkResumable {
                     continue;
                 }
                 Files.copy(mcFile.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                MutateClass.setWantReload(true);
                 mc.initialize(className, args, null, jvmOptions);
+                MutateClass.setWantReload(false);
                 s.setTarget(mc);
                 while((line = br.readLine())!=null){
                     String[] content = line.split("[;]");

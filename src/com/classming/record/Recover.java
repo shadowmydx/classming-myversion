@@ -37,7 +37,7 @@ public class Recover {
     public static void clear() {
         insertRecord.clear();
     }
-    private static void copy(File src, File dest) throws IOException {
+    public static void copy(File src, File dest) throws IOException {
         InputStream is = null;
         OutputStream os = null;
         try {
