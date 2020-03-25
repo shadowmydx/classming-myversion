@@ -32,7 +32,7 @@ public class ClassmingEntryResumable {
         return null;
     }
 
-    public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies) throws IOException {
+    public static void process(String className, int iterationCount, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
         List<MethodCounter> mc = readMutationCounter(classPath);
         if(leftIterationNumReaded <= 0)
             return;
@@ -52,7 +52,7 @@ public class ClassmingEntryResumable {
         }
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args, mc);
+        mutateClass.initialize(className, args, mc, jvmOptions);
         List<MutateClass> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         List<Double> averageDistance = new ArrayList<>();
@@ -229,18 +229,18 @@ public class ClassmingEntryResumable {
         cpSeparator = File.pathSeparator;
         long startTime = System.currentTimeMillis();
 
-//        process("com.classming.Hello", 1000, args, null, "");
+//        process("com.classming.Hello", 1000, args, null, "", "");
         process("avrora.Main", 3000,
                 new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-                "./sootOutput/avrora-cvs-20091224/",null);
+                "./sootOutput/avrora-cvs-20091224/",null, "");
 //        process("org.apache.batik.apps.rasterizer.Main", 400,null,
-//                "./sootOutput/batik-all/",null);
+//                "./sootOutput/batik-all/",null, "");
         process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
-                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
+                new String[]{"-debug"}, "./sootOutput/eclipse/", null, "");
         process("org.sunflow.Benchmark", 2000,
                 new String[]{"-bench","2","256"},
                 "./sootOutput/sunflow-0.07.2/",
-                "dependencies/janino-2.5.15.jar");
+                "dependencies/janino-2.5.15.jar", "");
         process("org.apache.fop.cli.Main", 3000,
                 new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
                 "./sootOutput/fop/",
@@ -248,7 +248,7 @@ public class ClassmingEntryResumable {
                         "dependencies/commons-logging.jar" + cpSeparator +
                         "dependencies/avalon-framework-4.2.0.jar" + cpSeparator +
                         "dependencies/batik-all.jar" + cpSeparator +
-                        "dependencies/commons-io-1.3.1.jar");
+                        "dependencies/commons-io-1.3.1.jar", "");
         process("org.python.util.jython", 6000,
                 new String[]{"sootOutput/jython/hello.py"},
                 "./sootOutput/jython/",
@@ -258,12 +258,12 @@ public class ClassmingEntryResumable {
                         "dependencies/jaffl.jar" + cpSeparator +
                         "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
                         "dependencies/antlr-3.1.3.jar" + cpSeparator +
-                        "dependencies/asm-3.1.jar");
+                        "dependencies/asm-3.1.jar", "");
 //        process("net.sourceforge.pmd.PMD", 2000,
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");  // pmd no accept
+//                        "dependencies/asm-3.1.jar", "");  // pmd no accept
 
 
         long endTime = System.currentTimeMillis();

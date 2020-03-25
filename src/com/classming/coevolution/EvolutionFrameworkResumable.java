@@ -13,6 +13,7 @@ import soot.G;
 import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class EvolutionFrameworkResumable {
@@ -45,7 +46,7 @@ public class EvolutionFrameworkResumable {
         actionContainer.put(State.GOTO, gotoAction);
     }
 
-    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies) throws IOException {
+    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
         int iterationLeft = readLeftIterationNum(classPath+"currentPopulation/", iterationLimit);
         if(iterationLeft <= 0)
             return;
@@ -72,10 +73,10 @@ public class EvolutionFrameworkResumable {
         List<Double> averageDistance = new ArrayList<>();
         Random random = new Random();
 
-        List<State> mutateAcceptHistory = readCurrentPopulation(classPath+"currentPopulation/", classPath, className, args);
+        List<State> mutateAcceptHistory = readCurrentPopulation(classPath+"currentPopulation/", classPath, className, args, jvmOptions);
         if(mutateAcceptHistory.size() == 0){
             MutateClass mutateClass = new MutateClass();
-            mutateClass.initialize(className, args, null);
+            mutateClass.initialize(className, args, null, jvmOptions);
             mutateClass.saveCurrentClass(); // in case 1st backtrack no backup
             State startState = new State();
             startState.setTarget(mutateClass);
@@ -162,7 +163,7 @@ public class EvolutionFrameworkResumable {
         G.reset();
     }
 
-    public static List<State> readCurrentPopulation(String populationPath, String classPath, String className, String[] args) {
+    public static List<State> readCurrentPopulation(String populationPath, String classPath, String className, String[] args, String jvmOptions) {
         List<State> list = new ArrayList<>();
         File file = new File(populationPath);
         String dstFilePath = classPath+className.replaceAll("[.]","/")+".class";
@@ -173,9 +174,6 @@ public class EvolutionFrameworkResumable {
         for(File f: file.listFiles()){
             if(!f.getName().endsWith(".state"))
                 continue;
-            if(dstFile.exists()){
-                dstFile.delete();
-            }
             System.out.println("Loading individual: "+f.getName());
             G.reset();  // important!!
             Main.initial(args);
@@ -189,8 +187,12 @@ public class EvolutionFrameworkResumable {
                 String backPath = br.readLine();
                 mc.setBackPath(backPath);  // backpath
                 File mcFile = new File(backPath);
-                Files.copy(mcFile.toPath(), dstFile.toPath());
-                mc.initialize(className, null, null);
+                if(!mcFile.exists()){  // can not find tmp class file in tmp dir
+                    System.err.println("Can not find individual "+mcFile.getName()+" in tmp dir!");
+                    continue;
+                }
+                Files.copy(mcFile.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                mc.initialize(className, args, null, jvmOptions);
                 s.setTarget(mc);
                 while((line = br.readLine())!=null){
                     String[] content = line.split("[;]");
@@ -276,6 +278,8 @@ public class EvolutionFrameworkResumable {
                 "./sootOutput/jython/",
                 "./sootOutput/fop/",
                 "./sootOutput/pmd-4.2.5/",
+                "./sootOutput/ant/ant-launcher/",
+                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
         };
         File target = new File("./tmpClass/");
         if(target.exists())
@@ -344,41 +348,54 @@ public class EvolutionFrameworkResumable {
 
     public static void main(String[] args) throws IOException {
         EvolutionFrameworkResumable fwk = new EvolutionFrameworkResumable();
-//        fwk.process("com.classming.Hello", 1000, args, null, "");
-        fwk.process("avrora.Main", 3000,
-                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
-                "./sootOutput/avrora-cvs-20091224/",null);
-//        fwk.process("org.apache.batik.apps.rasterizer.Main", 400,null,
-//                "./sootOutput/batik-all/",null);
-        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
-                new String[]{"-debug"}, "./sootOutput/eclipse/", null);
-        fwk.process("org.sunflow.Benchmark", 2000,
-                new String[]{"-bench","2","256"},
-                "./sootOutput/sunflow-0.07.2/",
-                "dependencies/janino-2.5.15.jar");
-        fwk.process("org.apache.fop.cli.Main", 3000,
-                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
-                "./sootOutput/fop/",
-                "dependencies/xmlgraphics-commons-1.3.1.jar" + cpSeparator +
-                        "dependencies/commons-logging.jar" + cpSeparator +
-                        "dependencies/avalon-framework-4.2.0.jar" + cpSeparator +
-                        "dependencies/batik-all.jar" + cpSeparator +
-                        "dependencies/commons-io-1.3.1.jar");
-        fwk.process("org.python.util.jython", 6000,
-                new String[]{"sootOutput/jython/hello.py"},
-                "./sootOutput/jython/",
-                "dependencies/guava-r07.jar" + cpSeparator +
-                        "dependencies/constantine.jar" + cpSeparator +
-                        "dependencies/jnr-posix.jar" + cpSeparator +
-                        "dependencies/jaffl.jar" + cpSeparator +
-                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
-                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
-                        "dependencies/asm-3.1.jar");
+////        fwk.process("com.classming.Hello", 1000, args, null, "", "");
+//        fwk.process("avrora.Main", 3000,
+//                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
+//                "./sootOutput/avrora-cvs-20091224/",null, "");
+////        fwk.process("org.apache.batik.apps.rasterizer.Main", 400,null,
+////                "./sootOutput/batik-all/",null, "");
+//        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
+//                new String[]{"-debug"}, "./sootOutput/eclipse/", null, "");
+//        fwk.process("org.sunflow.Benchmark", 2000,
+//                new String[]{"-bench","2","256"},
+//                "./sootOutput/sunflow-0.07.2/",
+//                "dependencies/janino-2.5.15.jar", "");
+//        fwk.process("org.apache.fop.cli.Main", 3000,
+//                new String[]{"-xml","sootOutput/fop/name.xml","-xsl","sootOutput/fop/name2fo.xsl","-pdf","sootOutput/fop/name.pdf"},
+//                "./sootOutput/fop/",
+//                "dependencies/xmlgraphics-commons-1.3.1.jar" + cpSeparator +
+//                        "dependencies/commons-logging.jar" + cpSeparator +
+//                        "dependencies/avalon-framework-4.2.0.jar" + cpSeparator +
+//                        "dependencies/batik-all.jar" + cpSeparator +
+//                        "dependencies/commons-io-1.3.1.jar", "");
+//        fwk.process("org.python.util.jython", 6000,
+//                new String[]{"sootOutput/jython/hello.py"},
+//                "./sootOutput/jython/",
+//                "dependencies/guava-r07.jar" + cpSeparator +
+//                        "dependencies/constantine.jar" + cpSeparator +
+//                        "dependencies/jnr-posix.jar" + cpSeparator +
+//                        "dependencies/jaffl.jar" + cpSeparator +
+//                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
+//                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
+//                        "dependencies/asm-3.1.jar", "");
 //        fwk.process("net.sourceforge.pmd.PMD", 2000,
 //                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
 //                "./sootOutput/pmd-4.2.5/",
 //                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar");  // pmd no accept
+//                        "dependencies/asm-3.1.jar", "");  // pmd no accept
+//        fwk.process("org.apache.tools.ant.launch.Launcher", 10000,
+//                new String[]{"compile", "jar", "run"},
+//                "./sootOutput/ant/ant-launcher/",
+//                null, "");
+        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 15000,
+                new String[]{"package"},
+                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+                null,
+                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
+                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
+                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
+                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
 
+        // Todo: When adding new benchmarks, please add classpath to cleanTmpFolder!!
     }
 }

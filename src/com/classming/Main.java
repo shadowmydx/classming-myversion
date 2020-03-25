@@ -199,9 +199,9 @@ public class Main {
         }
     }
 
-    public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args) throws IOException {
+    public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -272,10 +272,10 @@ public class Main {
         return usedStmt;
     }
 
-    public static List<String> getPureMainInstructionsFlow(String className, String[] args) throws IOException {
+    public static List<String> getPureMainInstructionsFlow(String className, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";

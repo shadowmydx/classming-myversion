@@ -22,3 +22,5 @@ tmpBackup*
 tmpClasses*
 tmpClass*
 findPopulationsInTemp*
+/sootOutput/apache-maven-3.6.3/*
+/sootOutput/ant/*

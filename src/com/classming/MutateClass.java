@@ -23,6 +23,11 @@ public class MutateClass {
     private static int loopLimit = 5;
     private static boolean noBegin = false;
     private static boolean shouldRandom = false;
+    private static String jvmOptions = "";
+
+    public static void setJvmOptions(String jvmOptions) {
+        MutateClass.jvmOptions = jvmOptions;
+    }
 
     public static void switchSelectStrategy() {
         shouldRandom = !shouldRandom;
@@ -45,8 +50,9 @@ public class MutateClass {
         return sootClass;
     }
 
-    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter) throws IOException {
+    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter, String jvmOptions) throws IOException {
         this.activeArgs = args;
+        this.jvmOptions = jvmOptions;
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
         if(Main.forceResolveFailed){
@@ -71,8 +77,8 @@ public class MutateClass {
         for (SootMethod method : this.sootClass.getMethods()) {
             this.methodLiveBody.put(method.getSignature(), method.retrieveActiveBody());
         }
-        this.classPureInstructionFlow = Main.getPureMainInstructionsFlow(className, activeArgs);
-        this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, activeArgs);
+        this.classPureInstructionFlow = Main.getPureMainInstructionsFlow(className, activeArgs, jvmOptions);
+        this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, activeArgs, jvmOptions);
         this.liveMethod = Main.getLiveMethod(this.mainLiveStmt, this.sootClass.getMethods());
         int counter = 0;
         for (SootMethod method : this.liveMethod) {
@@ -81,7 +87,7 @@ public class MutateClass {
             methodOriginalStmtList.put(method.getSignature(), Main.getAllStatementsList(method));
 
             methodMap.put(method.getSignature(), method);
-            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs); // usedStmt is stdout string
+            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs, jvmOptions); // usedStmt is stdout string
             List<Stmt> liveStmt = Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs);
             methodLiveQuery.put(method.getSignature(), changeListToSet(liveStmt));
             UsedStatementHelper.addClassMethodUsedStmt(className, method.getSignature(), usedStmt);
@@ -262,6 +268,7 @@ public class MutateClass {
 
         MutateClass result = new MutateClass();
         result.setActiveArgs(activeArgs);
+        result.setJvmOptions(jvmOptions);
         result.setClassName(className);
         result.setSootClass(sootClass);
 //        result.setBackPath(this.getBackPath());
@@ -657,7 +664,7 @@ public class MutateClass {
     public static void main(String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize("com.classming.Hello", args, null);
+        mutateClass.initialize("com.classming.Hello", args, null,"");
         mutateClass.sortByPotential();
         MethodCounter counter = mutateClass.getMethodToMutate();
         List<Stmt> liveCode = mutateClass.getMethodLiveCode(counter.getSignature());

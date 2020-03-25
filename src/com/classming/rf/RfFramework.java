@@ -31,10 +31,10 @@ public class RfFramework {
     }
 
     // estimate the Q(s, a) = Q(s, a) + alpha * (R - Q(s, a))
-    public void process(String className, int iterationCount, String[] args) throws IOException {
+    public void process(String className, int iterationCount, String[] args, String jvmOptions) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args, null);
+        mutateClass.initialize(className, args, null, jvmOptions);
         List<State> mutateAcceptHistory = new ArrayList<>();
         List<MutateClass> mutateRejectHistory = new ArrayList<>();
         List<Double> averageDistance = new ArrayList<>();
@@ -109,7 +109,7 @@ public class RfFramework {
     public static void main(String[] args) throws IOException {
         RfFramework framework = new RfFramework();
         try {
-            framework.process("com.classming.Hello", 500, args);
+            framework.process("com.classming.Hello", 500, args, "");
         }catch (NullPointerException e) {
             e.printStackTrace();
         }
