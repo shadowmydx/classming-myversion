@@ -37,7 +37,7 @@ public class EvolutionFramework {
         actionContainer.put(State.GOTO, gotoAction);
     }
 
-    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies) throws IOException {
+    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
 //        // redirect the ouput to the log file
 //        PrintStream newStream=new PrintStream("./"+className+".log");
 //        System.setOut(newStream);
@@ -52,7 +52,7 @@ public class EvolutionFramework {
         MutateClass.switchSelectStrategy();
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize(className, args, null);
+        mutateClass.initialize(className, args, null, jvmOptions);
         List<State> mutateAcceptHistory = new ArrayList<>();
         List<State> mutateRejectHistory = new ArrayList<>(); // once accpeted but get out
         List<Double> averageDistance = new ArrayList<>();
@@ -149,7 +149,7 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        fwk.process("com.classming.Hello", 1000, args, null, "");
+        fwk.process("com.classming.Hello", 1000, args, null, "", "");
 //        fwk.process("avrora.Main", 783,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
 //                "./sootOutput/avrora-cvs-20091224/",null);

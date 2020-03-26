@@ -1,13 +1,16 @@
 package com.classming;
 
+import com.classming.record.Recover;
 import com.classming.rf.Tool;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JIfStmt;
 import soot.jimple.internal.JLookupSwitchStmt;
 import soot.jimple.internal.JReturnStmt;
+import soot.options.Options;
 
 import javax.naming.Name;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.*;
@@ -23,6 +26,16 @@ public class MutateClass {
     private static int loopLimit = 5;
     private static boolean noBegin = false;
     private static boolean shouldRandom = false;
+    private static String jvmOptions = "";
+    private static boolean wantReload = false;  // aim at avoid the bug on 1st line in initializeSootClass
+
+    public static void setWantReload(boolean wantReload) {
+        MutateClass.wantReload = wantReload;
+    }
+
+    public static void setJvmOptions(String jvmOptions) {
+        MutateClass.jvmOptions = jvmOptions;
+    }
 
     public static void switchSelectStrategy() {
         shouldRandom = !shouldRandom;
@@ -45,10 +58,17 @@ public class MutateClass {
         return sootClass;
     }
 
-    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter) throws IOException {
+    public void initialize(String className, String[] args, List<MethodCounter> previousMutationCounter, String jvmOptions) throws IOException {
         this.activeArgs = args;
+        this.jvmOptions = jvmOptions;
         this.className = className;
         this.sootClass = Main.loadTargetClass(className);
+        if(Main.forceResolveFailed){
+            System.out.println("****************** ForceResolve Failed!! ******************");
+            System.out.println("***************** Recover Initial Class!! *****************");
+            previousMutationCounter = null;  // recover original class file
+            Main.forceResolveFailed = false;
+        }
         initializeSootClass(previousMutationCounter);
     }
 
@@ -61,13 +81,20 @@ public class MutateClass {
     }
 
     public void initializeSootClass(List<MethodCounter> previousMutationCounter) throws IOException {
-        Main.outputClassFile(this.sootClass); // active inject class.
+        if(!wantReload)
+            Main.outputClassFile(this.sootClass); // active inject class.
         for (SootMethod method : this.sootClass.getMethods()) {
             this.methodLiveBody.put(method.getSignature(), method.retrieveActiveBody());
         }
-        this.classPureInstructionFlow = Main.getPureMainInstructionsFlow(className, activeArgs);
-        this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, activeArgs);
-        this.liveMethod = Main.getLiveMethod(this.mainLiveStmt, this.sootClass.getMethods());
+        this.classPureInstructionFlow = Main.getPureMainInstructionsFlow(className, activeArgs, jvmOptions);
+        this.mainLiveStmt = Main.getExecutedLiveInstructions(className, Main.MAIN_SIGN, activeArgs, jvmOptions);
+        Set<String> classPureInstructionFlowSet= new HashSet<>();
+        for(String s: classPureInstructionFlow){
+            String[] elements = s.split("[*]+");
+            String currentStmt = elements[3].trim();
+            classPureInstructionFlowSet.add(currentStmt);
+        }
+        this.liveMethod = Main.getLiveMethod(classPureInstructionFlowSet, this.sootClass.getMethods());
         int counter = 0;
         for (SootMethod method : this.liveMethod) {
 //            methodOriginalQuery.put(method.getSignature(), Main.getAllStatementsSet(method)); // for tp selection: all stmts
@@ -75,7 +102,7 @@ public class MutateClass {
             methodOriginalStmtList.put(method.getSignature(), Main.getAllStatementsList(method));
 
             methodMap.put(method.getSignature(), method);
-            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs); // usedStmt is stdout string
+            Set<String> usedStmt = Main.getExecutedLiveInstructions(className, method.getSignature(), activeArgs, jvmOptions); // usedStmt is stdout string
             List<Stmt> liveStmt = Main.getActiveInstructions(usedStmt, className, method.getSignature(), activeArgs);
             methodLiveQuery.put(method.getSignature(), changeListToSet(liveStmt));
             UsedStatementHelper.addClassMethodUsedStmt(className, method.getSignature(), usedStmt);
@@ -109,7 +136,16 @@ public class MutateClass {
         Main.initial(activeArgs);
         SootClass newClass = Main.loadTargetClass(this.getClassName());
         this.setSootClass(newClass);
-        this.initializeSootClass(this.mutationCounter);
+        List<MethodCounter> previousMutationCounter = this.mutationCounter;
+        if(Main.forceResolveFailed){
+            System.out.println("****************** ForceResolve Failed!! ******************");
+            System.out.println("***************** Recover Initial Class!! *****************");
+            previousMutationCounter = null;  // recover original class file
+            Main.forceResolveFailed = false;
+        }
+        MutateClass.setWantReload(true);
+        this.initializeSootClass(previousMutationCounter);
+        MutateClass.setWantReload(false);
     }
 
     public MethodCounter getMethodByDistribution() {
@@ -249,11 +285,21 @@ public class MutateClass {
 
         MutateClass result = new MutateClass();
         result.setActiveArgs(activeArgs);
+        result.setJvmOptions(jvmOptions);
         result.setClassName(className);
         result.setSootClass(sootClass);
 //        result.setBackPath(this.getBackPath());
         result.setCurrentMethod(this.getCurrentMethod());  // current method can be only changed in iteration()
+
+        File source = new File(this.backPath);
+        String destName = SourceLocator.v().getFileNameFor(result.sootClass, Options.output_format_class);
+        destName = destName.replace("sootOutput"+File.separator, Main.getGenerated());
+        File dest = new File(destName);
+        Recover.copy(source, dest);
+
+        setWantReload(true);
         result.initializeSootClass(mutationCounter);
+        setWantReload(false);
         if (result.mainLiveStmt.size() == 0|| result.getMethodLiveCode(result.getCurrentMethod().getSignature()).size() == 0) {
             Main.temporaryOutput(result.getSootClass(), "./nolivecode/", System.currentTimeMillis() + ".");
             return null; // no live code.
@@ -644,7 +690,7 @@ public class MutateClass {
     public static void main(String[] args) throws IOException {
         MutateClass mutateClass = new MutateClass();
         Main.initial(args);
-        mutateClass.initialize("com.classming.Hello", args, null);
+        mutateClass.initialize("com.classming.Hello", args, null,"");
         mutateClass.sortByPotential();
         MethodCounter counter = mutateClass.getMethodToMutate();
         List<Stmt> liveCode = mutateClass.getMethodLiveCode(counter.getSignature());

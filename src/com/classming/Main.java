@@ -7,6 +7,7 @@ import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,8 @@ public class Main {
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
     private static final String LIMITED_STMT = ":= @";
+
+    public static boolean forceResolveFailed = false;
 
     public static String getGenerated() {
         return generated;
@@ -196,9 +199,9 @@ public class Main {
         }
     }
 
-    public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args) throws IOException {
+    public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -222,6 +225,7 @@ public class Main {
                 }
                 finally{
                     try {
+                        br2.close();
                         is2.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -250,6 +254,7 @@ public class Main {
                     e.printStackTrace();
             } finally{
                 try {
+                    br1.close();
                     is1.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -267,10 +272,10 @@ public class Main {
         return usedStmt;
     }
 
-    public static List<String> getPureMainInstructionsFlow(String className, String[] args) throws IOException {
+    public static List<String> getPureMainInstructionsFlow(String className, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -293,6 +298,7 @@ public class Main {
                 }
                 finally{
                     try {
+                        br2.close();
                         is2.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -314,6 +320,7 @@ public class Main {
                 e.printStackTrace();
             } finally {
                 try {
+                    br1.close();
                     is1.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -403,7 +410,34 @@ public class Main {
     }
 
     public static SootClass loadTargetClass(String className) {
-        SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
+        SootClass c = null;
+//        boolean retry = false;
+//        int tryTimes = 0;
+//        do{
+//            try {
+//                tryTimes++;
+                c = Scene.v().forceResolve(className, SootClass.BODIES);
+//                retry = false;
+//            }catch (ArrayIndexOutOfBoundsException e){
+//                System.out.println("Scene.v().forceResolve() Failed!!!");
+//                System.out.println("Times Tried: " + tryTimes);
+//                retry = true;
+//                if(tryTimes > 5){
+//                    // recover the original file
+//                    retry = false;
+//                    File originalFile = new File(generated+className.replace(".", File.separator)+"-original.class");
+//                    File currentFile = new File(generated+className.replace(".", File.separator)+".class");
+//                    currentFile.delete();
+//                    try {
+//                        Files.copy(originalFile.toPath(), currentFile.toPath());
+//                    }catch (Exception ex){
+//                        ex.printStackTrace();
+//                    }
+//                    c = Scene.v().forceResolve(className, SootClass.BODIES);
+//                    forceResolveFailed = true;
+//                }
+//            }
+//        }while(retry);
 //        c.setResolvingLevel(0);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method : d) {
@@ -418,6 +452,13 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
+        G.reset();
+        Main.setGenerated("./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/");
+        Main.initial(args);
+        SootClass newClass = Main.loadTargetClass("org.codehaus.plexus.classworlds.launcher.Launcher");
+        Main.outputClassFile(newClass);
+
+
         initial(args);
         SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
         List<SootMethod> d = c.getMethods();
