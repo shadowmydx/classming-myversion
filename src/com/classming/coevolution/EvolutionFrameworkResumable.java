@@ -47,6 +47,32 @@ public class EvolutionFrameworkResumable {
     }
 
     public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
+        if(classPath != null && !classPath.equals("")){
+            if(classPath.contains(File.pathSeparator)){
+                int psIdx = classPath.indexOf(File.pathSeparator);
+                Main.setGenerated(classPath.substring(0, psIdx));
+                String extraCp = "";
+                for(String cpComponent: classPath.substring(psIdx+1).split(File.pathSeparator)){
+                    if(cpComponent.endsWith(".jar")){
+                        extraCp+=File.pathSeparator+cpComponent;
+                    }else{
+                        File d = new File(cpComponent);
+                        for(File f:d.listFiles()){
+                            if(f.getName().endsWith(".jar")){
+                                extraCp += File.pathSeparator + cpComponent+f.getName();
+                            }
+                        }
+                    }
+                }
+                Main.setExtraCp(extraCp);
+            }else{
+                Main.setGenerated(classPath);
+            }
+            classPath = Main.getGenerated();
+        }else{
+            classPath = "";
+        }
+
         int iterationLeft = readLeftIterationNum(classPath+"currentPopulation/", iterationLimit);
         if(iterationLeft <= 0)
             return;
@@ -59,12 +85,17 @@ public class EvolutionFrameworkResumable {
         System.out.println("Iteration left: "+ iterationLeft);
         iterationLimit = iterationLeft;
 
-        if(classPath != null && !classPath.equals("")){
-            Main.setGenerated(classPath);
-        }else{
-            classPath = "";
-        }
         if(dependencies != null && !dependencies.equals("")){
+            if(!dependencies.endsWith(".jar")){  // directory
+                File d = new File(dependencies);
+                String tmp = "";
+                for(File f:d.listFiles()){
+                    if(f.getName().endsWith(".jar")){
+                        tmp+=dependencies+f.getName()+File.pathSeparator;
+                    }
+                }
+                dependencies = tmp;
+            }
             Main.setDependencies(dependencies);
         }
         MutateClass.switchSelectStrategy();
@@ -74,6 +105,7 @@ public class EvolutionFrameworkResumable {
         Random random = new Random();
 
         List<State> mutateAcceptHistory = readCurrentPopulation(classPath+"currentPopulation/", classPath, className, args, jvmOptions);
+        checkBackpathNull(mutateAcceptHistory, "In replacement, mutateAcceptHistory:(size="+mutateAcceptHistory.size()+")");
         if(mutateAcceptHistory.size() == 0){
             MutateClass mutateClass = new MutateClass();
             mutateClass.initialize(className, args, null, jvmOptions);
@@ -81,6 +113,7 @@ public class EvolutionFrameworkResumable {
             State startState = new State();
             startState.setTarget(mutateClass);
             mutateAcceptHistory.add(startState);
+            checkBackpathNull(mutateAcceptHistory, "In initialization, mutateAcceptHistory:(size="+mutateAcceptHistory.size()+")");
         }
         int iterationCount = 0;
         while (iterationCount < iterationLimit) {
@@ -104,6 +137,7 @@ public class EvolutionFrameworkResumable {
                     ClassmingEntry.showListElement(current.getTarget().getMethodLiveCodeString(currentCounter.getSignature()));
                     nextState.getTarget().saveCurrentClass();
                     mutateAcceptHistory.add(nextState);
+                    checkBackpathNull(mutateAcceptHistory, "In iteration, mutateAcceptHistory:(size="+mutateAcceptHistory.size()+")");
                     current.updateMethodScore(nextActionString, distance / 1.0);
                 } else {
                     current.updateMethodScore(nextActionString, DEAD_END);
@@ -132,6 +166,7 @@ public class EvolutionFrameworkResumable {
                 dumpAcceptPopulation(mutateAcceptHistory, className);
                 saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/", iterationLimit-iterationCount);
             }else{
+//                dumpAcceptPopulation(mutateAcceptHistory, className);
                 saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",  iterationLimit-iterationCount);
             }
         }
@@ -163,6 +198,17 @@ public class EvolutionFrameworkResumable {
         G.reset();
     }
 
+    public static void checkBackpathNull(List<State> list, String msg){
+        for(int i = 0; i< list.size();i ++){
+            State s = list.get(i);
+            if(s.getTarget().getBackPath() == null || s.getTarget().getBackPath().equals("")){
+                System.err.println("**********" + msg+" "+i+"th state has no backpath!"+"**********");
+                list.remove(s);
+                i--;
+            }
+        }
+    }
+
     public static List<State> readCurrentPopulation(String populationPath, String classPath, String className, String[] args, String jvmOptions) {
         List<State> list = new ArrayList<>();
         File file = new File(populationPath);
@@ -186,15 +232,16 @@ public class EvolutionFrameworkResumable {
                 String line = null;
                 String backPath = br.readLine();
                 mc.setBackPath(backPath);  // backpath
+//                System.out.println(f.getName()+" set backpath: "+backPath);
                 File mcFile = new File(backPath);
                 if(!mcFile.exists()){  // can not find tmp class file in tmp dir
                     System.err.println("Can not find individual "+mcFile.getName()+" in tmp dir!");
                     continue;
                 }
                 Files.copy(mcFile.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                MutateClass.setWantReload(true);
+//                MutateClass.setWantReload(true);
                 mc.initialize(className, args, null, jvmOptions);
-                MutateClass.setWantReload(false);
+//                MutateClass.setWantReload(false);
                 s.setTarget(mc);
                 while((line = br.readLine())!=null){
                     String[] content = line.split("[;]");
@@ -282,6 +329,11 @@ public class EvolutionFrameworkResumable {
                 "./sootOutput/pmd-4.2.5/",
                 "./sootOutput/ant/ant-launcher/",
                 "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+                "./sootOutput/resolver/",
+                "./sootOutput/apache-any23-cli-2.3/",
+                "./sootOutput/xalan/",
+                "sootOutput/ivy-2.5.0/",
+                "sootOutput/tika-app-1.24/"
         };
         File target = new File("./tmpClass/");
         if(target.exists())
@@ -328,6 +380,8 @@ public class EvolutionFrameworkResumable {
 
     public static void saveState(State s, String directory){
 //        ClassmingEntry.dumpSingleMutateClass(s.getTarget(), directory);
+        if(s.getTarget().getBackPath() == null)
+            return;
         String logName = s.getTarget().getBackPath().replace("./tmp/","").replace(".class",".state");
         File file = new File(directory+logName);
         try {
@@ -380,24 +434,57 @@ public class EvolutionFrameworkResumable {
 //                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
 //                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
 //                        "dependencies/asm-3.1.jar", "");
-//        fwk.process("net.sourceforge.pmd.PMD", 2000,
-//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
-//                "./sootOutput/pmd-4.2.5/",
-//                "dependencies/jaxen-1.1.1.jar;" +
-//                        "dependencies/asm-3.1.jar", "");  // pmd no accept
+        fwk.process("net.sourceforge.pmd.PMD", 30000,
+                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+                "./sootOutput/pmd-4.2.5/",
+                "dependencies/jaxen-1.1.1.jar" + File.pathSeparator +
+                        "dependencies/asm-3.1.jar", "");  // pmd no accept
 //        fwk.process("org.apache.tools.ant.launch.Launcher", 10000,
 //                new String[]{"compile", "jar", "run"},
 //                "./sootOutput/ant/ant-launcher/",
 //                null, "");
-        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 15000,
-                new String[]{"package"},
-                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
-                null,
-                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
-                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
-                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
-                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
+//        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 15000,
+//                new String[]{"package"},
+//                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+//                null,
+//                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
+//                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
+//                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
+//                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
+//        fwk.process("org.apache.xml.resolver.apps.resolver", 30000,
+//                new String[]{"-d", "2", "-c", "sootOutput/resolver/example/catalog.xml", "-p", "-//Example//DTD Example V1.0//EN", "public"},
+//                "./sootOutput/resolver/", null, "");
+//        fwk.process("org.apache.xml.resolver.apps.xparse", 30000,
+//                new String[]{"-d", "2", "-c", "sootOutput/resolver/example/catalog.xml", "sootOutput/resolver/example/example.xml"},
+//                "./sootOutput/resolver/", null, "");
+//         fwk.process("org.apache.any23.cli.ToolRunner", 10000,
+//                new String[]{"mimes", "file://./sootOutput/apache-any23-cli-2.3/META-INF/NOTICE.txt"},
+//                "./sootOutput/apache-any23-cli-2.3/"+File.pathSeparator+"./dependencies/any23/",
+//                 null, "");
+//        fwk.process("org.apache.xalan.xslt.Process", 12000,
+//            new String[]{"-in","sootOutput/xalan/example/xalanApplets.xml",
+//                        "-xsl","sootOutput/xalan/example/s1ToHTML.xsl",
+//                        "-out", "sootOutput/xalan/example/out.html"},
+//            "sootOutput/xalan/" + File.pathSeparator +
+//                    "sootOutput/xalan/serializer.jar" + File.pathSeparator +
+//                    "sootOutput/xalan/xercesImpl.jar" + File.pathSeparator +
+//                    "sootOutput/xalan/xml-apis.jar",
+//             null, "");
+//        fwk.process("org.apache.catalina.startup.Bootstrap", 10000,
+//            new String[]{},
+//            "sootOutput/apache-tomcat-9.0.33/bin/bootstrap/" + File.pathSeparator +
+//                    "sootOutput/apache-tomcat-9.0.33/bin/tomcat-juli.jar",
+//            null,
+//            "-Dcatalina.home=sootOutput/apache-tomcat-9.0.33 " +
+//                    "-Dcatalina.base=sootOutput/apache-tomcat-9.0.33 " +
+//                    "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager " +
+//                    "-Djava.util.logging.config.file=sootOutput/apache-tomcat-9.0.33/conf/logging.properties"); // dead
+//        fwk.process("org.apache.ivy.Main", 15000, new String[]{},
+//                "sootOutput/ivy-2.5.0/",null, "");
+//        fwk.process("org.apache.tika.cli.TikaCLI", 15000,
+//                new String[]{"<","sootOutput/tika-app-1.24/example.doc",">","sootOutput/tika-app-1.24/result.xhtml"},
+//                "sootOutput/tika-app-1.24/",null, "");
 
-        // Todo: When adding new benchmarks, please add classpath to cleanTmpFolder!!
+//         Todo: When adding new benchmarks, please add classpath to cleanTmpFolder!!
     }
 }

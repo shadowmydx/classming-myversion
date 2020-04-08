@@ -24,3 +24,6 @@ tmpClass*
 findPopulationsInTemp*
 /sootOutput/apache-maven-3.6.3/*
 /sootOutput/ant/*
+/dependencies/*
+/sootOutput/*
+/src/com/classming/ModifyConstant.java
