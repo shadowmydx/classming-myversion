@@ -154,6 +154,8 @@ public class ClassmingEntry {
 
     // targetDirectory should be "./AcceptHistory/" or "./RejectHistory/"
     public static void dumpSingleMutateClass(MutateClass mc, String targetDirectory){
+        if(mc.getBackPath()==null || mc.getBackPath().equals(""))
+            System.err.println("ClassmingEntry.dumpSingleMutateClass(): mutateClass's backpath = "+mc.getBackPath());
         String backPath = mc.getBackPath();
         File source = new File(backPath);
         File dest = new File(backPath.replace("./tmp/", targetDirectory));

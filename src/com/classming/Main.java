@@ -9,6 +9,7 @@ import soot.util.JasminOutputStream;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,7 @@ public class Main {
     private static final String LOG_PREVIOUS = " **** Executed Line: **** ";
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
     private static final String LIMITED_STMT = ":= @";
+    private static String extraCp = "";
 
     public static boolean forceResolveFailed = false;
 
@@ -32,6 +34,10 @@ public class Main {
 
     public static void setGenerated(String generated) {
         Main.generated = generated;
+    }
+
+    public static void setExtraCp(String extraCp) {
+        Main.extraCp = extraCp;
     }
 
     public static String getDependencies() {
@@ -62,6 +68,7 @@ public class Main {
             streamOut.close();
             return fileName;
         } catch (Exception e) {
+//            e.printStackTrace();
             System.out.println("should not");
             return null;
         }
@@ -184,9 +191,14 @@ public class Main {
         pathes.add(generated);
 //        pathes.add(target);
 //        Options.v().parse(args);
-        String[] dependencyArr = dependencies.split("[;]");
+        String[] dependencyArr = dependencies.split(File.pathSeparator);
         for(String d: dependencyArr){
             pathes.add(d);
+        }
+        if(!extraCp.equals("")){
+            for(String s: extraCp.substring(1).split(File.pathSeparator)){
+                pathes.add(s);
+            }
         }
         Options.v().set_soot_classpath(generateClassPath(pathes));
         Scene.v().loadNecessaryClasses();
@@ -201,7 +213,7 @@ public class Main {
 
     public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -275,7 +287,7 @@ public class Main {
     public static List<String> getPureMainInstructionsFlow(String className, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + " "+ jvmOptions + " " + className;
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -394,6 +406,41 @@ public class Main {
         return activeJimpleInstructions;
     }
 
+    public static List<Stmt> getActiveInstructions(Set<String> usedStmt, SootClass c, String signature, String[] args) throws IOException {
+        List<Stmt> activeJimpleInstructions = new ArrayList<>();
+        List<SootMethod> d = c.getMethods();
+        SootMethod mainMethod = null;
+        for (SootMethod method : d) {
+            String currentSignature = method.getSignature();
+            if (currentSignature.contains(signature)) {
+                mainMethod = method;
+                break;
+            }
+        }
+        if (mainMethod == null) {
+            return null;
+        }
+        Body body = mainMethod.retrieveActiveBody();
+        UnitPatchingChain units = body.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+        Map<String, String> mapping = new HashMap<>();
+        while (iter.hasNext()) {
+            Stmt current = (Stmt)iter.next();
+            if (current.toString().contains(LOG_PREVIOUS)) { // because soot will rename variable
+                String[] elements = current.toString().split("[*]+");
+                String currentStmt = elements[3].trim().replace("\\", "");  // replace escape character
+                currentStmt = currentStmt.substring(0, currentStmt.length() - 2);
+                if (usedStmt.contains(currentStmt)) {
+                    Stmt previous = (Stmt) (units.getPredOf(current));
+                    mapping.put(previous.toString(), currentStmt);
+                    activeJimpleInstructions.add(previous);
+                }
+            }
+        }
+        UsedStatementHelper.addMethodStringToStmt(signature, mapping);
+        return activeJimpleInstructions;
+    }
+
     public static SootClass loadTargetClassVector(String className) {
         SootClass c = Scene.v().forceResolve(className, SootClass.BODIES);
 //        c.setResolvingLevel(0);
@@ -452,20 +499,24 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        G.reset();
+//        G.reset();
+//        Main.setGenerated("./sootOutput/ant/ant-launcher/");
+//        Main.initial(args);
+//        SootClass newClass = Main.loadTargetClass("org.apache.tools.ant.launch.Launcher");
+//        Main.outputClassFile(newClass);
+
+
         Main.setGenerated("./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/");
-        Main.initial(args);
-        SootClass newClass = Main.loadTargetClass("org.codehaus.plexus.classworlds.launcher.Launcher");
-        Main.outputClassFile(newClass);
-
-
         initial(args);
-        SootClass c = Scene.v().forceResolve("com.classming.Hello", SootClass.BODIES);
+        SootClass c = Scene.v().forceResolve("org.codehaus.plexus.classworlds.launcher.Launcher", SootClass.BODIES);
         List<SootMethod> d = c.getMethods();
         for (SootMethod method: d) {
             method.retrieveActiveBody();
         }
-        SootMethod test = d.get(2);
+        SootMethod test = d.get(18);
+        for(Unit u:d.get(18).getActiveBody().getUnits()){
+            System.out.println(u.toString());
+        }
         Body body = test.getActiveBody();
         UnitPatchingChain units = body.getUnits();
 
