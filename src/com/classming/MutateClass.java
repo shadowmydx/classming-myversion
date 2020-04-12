@@ -95,7 +95,7 @@ public class MutateClass {
             String currentStmt = elements[3].trim();
             classPureInstructionFlowSet.add(currentStmt);
         }
-        this.liveMethod = Main.getLiveMethod(classPureInstructionFlowSet, this.sootClass.getMethods());
+        this.liveMethod = Main.getLiveMethod(classPureInstructionFlowSet, classPureInstructionFlow, this.sootClass.getMethods());
         int counter = 0;
         for (SootMethod method : this.liveMethod) {
 //            methodOriginalQuery.put(method.getSignature(), Main.getAllStatementsSet(method)); // for tp selection: all stmts
@@ -301,10 +301,14 @@ public class MutateClass {
 //        setWantReload(true);
         result.initializeSootClass(mutationCounter);
 //        setWantReload(false);
-        if (result.mainLiveStmt.size() == 0|| result.getMethodLiveCode(result.getCurrentMethod().getSignature()).size() == 0) {
+        if (result.getClassPureInstructionFlow().size() == 0 || result.getMethodLiveCode(result.getCurrentMethod().getSignature()).size() == 0) {
             Main.temporaryOutput(result.getSootClass(), "./nolivecode/", System.currentTimeMillis() + ".");
-            return null; // no live code.
+            return null;
         }
+//        else if (result.mainLiveStmt.size() == 0|| result.getMethodLiveCode(result.getCurrentMethod().getSignature()).size() == 0) {
+//            Main.temporaryOutput(result.getSootClass(), "./nolivecode/", System.currentTimeMillis() + ".");
+//            return null; // no live code.
+//        }
         return result;
 
 

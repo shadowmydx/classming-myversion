@@ -25,8 +25,15 @@ public class Main {
     public static final String MAIN_SIGN = "void main(java.lang.String[])";
     private static final String LIMITED_STMT = ":= @";
     private static String extraCp = "";
+    private static boolean usedJunit = false;
+    private static String junitCmd = ""; // java -cp .;source/class/path;path/junit.jar;path/hamcrest-jar org.junit.runner.JUnitCore [TestClass]
 
     public static boolean forceResolveFailed = false;
+
+
+    public static void switchJunit() {
+        usedJunit = !usedJunit;
+    }
 
     public static String getGenerated() {
         return generated;
@@ -214,6 +221,9 @@ public class Main {
     public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
+        if (usedJunit) {
+            cmd = junitCmd;
+        }
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -284,10 +294,22 @@ public class Main {
         return usedStmt;
     }
 
+    public static String setJunitCommand(String junitPath, String hamcrestPath, String testClassPath, String jvmOptions) {
+        if (!usedJunit) {
+            switchJunit();
+        }
+        junitCmd = "java -Xbootclasspath/a:" + dependencies + " -classpath .;" + junitPath + ";" + hamcrestPath + ";" + generated +  " " + jvmOptions + " org.junit.runner.JUnitCore " + extraCp  + testClassPath;
+        return junitCmd;
+    }
+
+
     public static List<String> getPureMainInstructionsFlow(String className, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
         String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
+        if (usedJunit) {
+            cmd = junitCmd;
+        }
         if (args != null && args.length != 0) {
             for (String arg: args) {
                 cmd += " " + arg + " ";
@@ -347,22 +369,41 @@ public class Main {
         return result;
     }
 
-    public static List<SootMethod> getLiveMethod(Set<String> usedStmt, List<SootMethod> methods) {
+
+
+    public static List<SootMethod> getLiveMethod(Set<String> usedStmt, List<String> pureInstructionFlow, List<SootMethod> methods) {
         List<SootMethod> signatures = new ArrayList<>();
         Set<String> involvedMethod = new HashSet<>();
-        Pattern invokePattern = Pattern.compile("[<][^:]+[:]\\s+[^>]+[>]");
-        for (String stmt : usedStmt) {
-            if (!stmt.contains(LOG_PREVIOUS) && stmt.contains("invoke")) {
-                Matcher matcher = invokePattern.matcher(stmt);
+        if (usedJunit) {
+            Pattern pattern = Pattern.compile("[<](.*)[>]", Pattern.DOTALL);
+            for (String instruction: pureInstructionFlow) {
+                String[] elements = instruction.split("[*]+");
+                String singleElement = elements[0];
+                Matcher matcher = pattern.matcher(singleElement);
                 if (matcher.find()) {
-                    String methodName = matcher.group();
-                    involvedMethod.add(methodName);
+                    involvedMethod.add(matcher.group());
                 }
             }
-        }
-        for (SootMethod method : methods) {
-            if (involvedMethod.contains(method.getSignature()) || method.getSignature().contains(MAIN_SIGN)) {
-                signatures.add(method);
+            for (SootMethod method : methods) {
+                if (involvedMethod.contains(method.getSignature())) {
+                    signatures.add(method);
+                }
+            }
+        } else {
+            Pattern invokePattern = Pattern.compile("[<][^:]+[:]\\s+[^>]+[>]");
+            for (String stmt : usedStmt) {
+                if (!stmt.contains(LOG_PREVIOUS) && stmt.contains("invoke")) {
+                    Matcher matcher = invokePattern.matcher(stmt);
+                    if (matcher.find()) {
+                        String methodName = matcher.group();
+                        involvedMethod.add(methodName);
+                    }
+                }
+            }
+            for (SootMethod method : methods) {
+                if (involvedMethod.contains(method.getSignature()) || method.getSignature().contains(MAIN_SIGN)) {
+                    signatures.add(method);
+                }
             }
         }
         return signatures;

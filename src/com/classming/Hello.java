@@ -2,6 +2,9 @@ package com.classming;
 
 public class Hello {
     public static void main(String[] args) {
+        process(args);
+    }
+    public static void process(String[] args) {
         System.out.println("hello");
         int sum = 0;
         for (int i = 0; i < 100; i ++) {

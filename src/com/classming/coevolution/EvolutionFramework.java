@@ -149,6 +149,7 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
+        Main.setJunitCommand("D:\\NEW-RESEARCH\\junit-4.12.jar", "D:\\NEW-RESEARCH\\hamcrest-core-1.3.jar", "com.classming.HelloTest", "");
         fwk.process("com.classming.Hello", 1000, args, null, "", "");
 //        fwk.process("avrora.Main", 783,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
