@@ -412,7 +412,7 @@ public class EvolutionFrameworkResumable {
 ////                "./sootOutput/batik-all/",null, "");
 //        fwk.process("org.eclipse.core.runtime.adaptor.EclipseStarter", 18000,
 //                new String[]{"-debug"}, "./sootOutput/eclipse/", null, "");
-//        fwk.process("org.sunflow.Benchmark", 2000,
+//        fwk.process("org.sunflow.Benchmark", 50000,
 //                new String[]{"-bench","2","256"},
 //                "./sootOutput/sunflow-0.07.2/",
 //                "dependencies/janino-2.5.15.jar", "");
@@ -434,30 +434,30 @@ public class EvolutionFrameworkResumable {
 //                        "dependencies/jline-0.9.95-SNAPSHOT.jar" + cpSeparator +
 //                        "dependencies/antlr-3.1.3.jar" + cpSeparator +
 //                        "dependencies/asm-3.1.jar", "");
-        fwk.process("net.sourceforge.pmd.PMD", 30000,
-                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
-                "./sootOutput/pmd-4.2.5/",
-                "dependencies/jaxen-1.1.1.jar" + File.pathSeparator +
-                        "dependencies/asm-3.1.jar", "");  // pmd no accept
-//        fwk.process("org.apache.tools.ant.launch.Launcher", 10000,
+//        fwk.process("net.sourceforge.pmd.PMD", 50000,
+//                new String[]{"sootOutput/pmd-4.2.5/Hello.java","text","unusedcode"},
+//                "./sootOutput/pmd-4.2.5/",
+//                "dependencies/jaxen-1.1.1.jar" + File.pathSeparator +
+//                        "dependencies/asm-3.1.jar", "");  // pmd no accept
+//        fwk.process("org.apache.tools.ant.launch.Launcher", 50000,
 //                new String[]{"compile", "jar", "run"},
 //                "./sootOutput/ant/ant-launcher/",
 //                null, "");
-//        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 15000,
-//                new String[]{"package"},
-//                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
-//                null,
-//                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
-//                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
-//                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
-//                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
+        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 50000,
+                new String[]{"package"},
+                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+                null,
+                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
+                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
+                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
+                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
 //        fwk.process("org.apache.xml.resolver.apps.resolver", 30000,
 //                new String[]{"-d", "2", "-c", "sootOutput/resolver/example/catalog.xml", "-p", "-//Example//DTD Example V1.0//EN", "public"},
 //                "./sootOutput/resolver/", null, "");
 //        fwk.process("org.apache.xml.resolver.apps.xparse", 30000,
 //                new String[]{"-d", "2", "-c", "sootOutput/resolver/example/catalog.xml", "sootOutput/resolver/example/example.xml"},
 //                "./sootOutput/resolver/", null, "");
-//         fwk.process("org.apache.any23.cli.ToolRunner", 10000,
+//         fwk.process("org.apache.any23.cli.ToolRunner", 50000,
 //                new String[]{"mimes", "file://./sootOutput/apache-any23-cli-2.3/META-INF/NOTICE.txt"},
 //                "./sootOutput/apache-any23-cli-2.3/"+File.pathSeparator+"./dependencies/any23/",
 //                 null, "");
@@ -479,9 +479,9 @@ public class EvolutionFrameworkResumable {
 //                    "-Dcatalina.base=sootOutput/apache-tomcat-9.0.33 " +
 //                    "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager " +
 //                    "-Djava.util.logging.config.file=sootOutput/apache-tomcat-9.0.33/conf/logging.properties"); // dead
-//        fwk.process("org.apache.ivy.Main", 15000, new String[]{},
+//        fwk.process("org.apache.ivy.Main", 50000, new String[]{},
 //                "sootOutput/ivy-2.5.0/",null, "");
-//        fwk.process("org.apache.tika.cli.TikaCLI", 15000,
+//        fwk.process("org.apache.tika.cli.TikaCLI", 50000,
 //                new String[]{"<","sootOutput/tika-app-1.24/example.doc",">","sootOutput/tika-app-1.24/result.xhtml"},
 //                "sootOutput/tika-app-1.24/",null, "");
 
