@@ -26,8 +26,17 @@ public class EvolutionFrameworkResumable {
     private static Action returnAction = new ReturnAction();
 
     EvolutionFrameworkResumable(){
-        if(System.getProperties().getProperty("os.name").startsWith("Windows")){
-            cpSeparator = ";";
+        cpSeparator = File.pathSeparator;
+        makeDir("./AcceptHistory/");
+        makeDir("./RejectHistory/");
+        makeDir("./nolivecode/");
+        makeDir("./tmp/");
+    }
+
+    public void makeDir(String path){
+        File f = new File(path);
+        if(!f.exists()){
+            f.mkdir();
         }
     }
 
@@ -164,10 +173,12 @@ public class EvolutionFrameworkResumable {
                 }
                 mutateAcceptHistory = mutateAcceptHistory.subList(0, POPULATION_LIMIT);
                 dumpAcceptPopulation(mutateAcceptHistory, className);
-                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/", iterationLimit-iterationCount);
+                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",
+                        iterationLimit-iterationCount, classPath);
             }else{
 //                dumpAcceptPopulation(mutateAcceptHistory, className);
-                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",  iterationLimit-iterationCount);
+                saveCurrentPopulation(mutateAcceptHistory, classPath+"currentPopulation/",
+                        iterationLimit-iterationCount, classPath);
             }
         }
 
@@ -293,7 +304,8 @@ public class EvolutionFrameworkResumable {
 
     }
 
-    public static void saveCurrentPopulation(List<State> stateList, String populationPath, int leftIterationNum){
+    public static void saveCurrentPopulation(List<State> stateList, String populationPath,
+                                             int leftIterationNum, String currentClassPath){
         File file = new File(populationPath);
         if(!file.exists()){
             file.mkdir();
@@ -314,27 +326,31 @@ public class EvolutionFrameworkResumable {
         }catch (Exception e){
             e.printStackTrace();
         }
-        cleanTmpFolder();
+        cleanTmpFolder(currentClassPath);
     }
 
-    public static void cleanTmpFolder(){
+    public static void cleanTmpFolder(String currentClassPath){
         String targetDir = "./tmp/";
-        String[] classPath = new String[]{
-                "./sootOutput/avrora-cvs-20091224/",
-                "./sootOutput/batik-all/",
-                "./sootOutput/eclipse/",
-                "./sootOutput/sunflow-0.07.2/",
-                "./sootOutput/jython/",
-                "./sootOutput/fop/",
-                "./sootOutput/pmd-4.2.5/",
-                "./sootOutput/ant/ant-launcher/",
-                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
-                "./sootOutput/resolver/",
-                "./sootOutput/apache-any23-cli-2.3/",
-                "./sootOutput/xalan/",
-                "sootOutput/ivy-2.5.0/",
-                "sootOutput/tika-app-1.24/"
-        };
+        List<String> classPath = new ArrayList<>(Arrays.asList(
+            "./sootOutput/avrora-cvs-20091224/",
+            "./sootOutput/batik-all/",
+            "./sootOutput/eclipse/",
+            "./sootOutput/sunflow-0.07.2/",
+            "./sootOutput/jython/",
+            "./sootOutput/fop/",
+            "./sootOutput/pmd-4.2.5/",
+            "./sootOutput/ant/ant-launcher/",
+            "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+            "./sootOutput/resolver/",
+            "./sootOutput/apache-any23-cli-2.3/",
+            "./sootOutput/xalan/",
+            "sootOutput/ivy-2.5.0/",
+            "sootOutput/tika-app-1.24/",
+            "./sootOutput/junit-ant/"
+        ));
+        if(!classPath.contains(currentClassPath)){
+            classPath.add(currentClassPath);
+        }
         File target = new File("./tmpClass/");
         if(target.exists())
             deleteFile(target);
@@ -404,6 +420,126 @@ public class EvolutionFrameworkResumable {
 
     public static void main(String[] args) throws IOException {
         EvolutionFrameworkResumable fwk = new EvolutionFrameworkResumable();
+        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+                "../tools.jar", "org.apache.tools.ant.AntClassLoaderTest");
+        fwk.process("org.apache.tools.ant.AntClassLoader", 10000, args,
+                "./sootOutput/junit-ant/",
+                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.DirectoryScannerTest");
+//        fwk.process("org.apache.tools.ant.DirectoryScanner", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.IntrospectionHelperTest");
+//        fwk.process("org.apache.tools.ant.IntrospectionHelper", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.ProjectTest");
+//        fwk.process("org.apache.tools.ant.Project", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.DefaultLoggerTest");
+//        fwk.process("org.apache.tools.ant.DefaultLogger", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.ProjectHelperRepositoryTest");
+//        fwk.process("org.apache.tools.ant.ProjectHelperRepository", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.UnknownElementTest");
+//        fwk.process("org.apache.tools.ant.UnknownElement", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.launch.LocatorTest");
+//        fwk.process("org.apache.tools.ant.launch.Locator", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.taskdefs.AntTest");
+//        fwk.process("org.apache.tools.ant.BuildFileRule", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.taskdefs.AvailableTest");
+//        fwk.process("org.apache.tools.ant.taskdefs.Available", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
+
+
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.runner.FilterFactoriesTest");
+//        fwk.process("org.junit.runner.FilterFactories", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.runner.JUnitCommandLineParseResultTest");
+//        fwk.process("org.junit.runner.JUnitCommandLineParseResult", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.runners.RuleContainerTest");
+//        fwk.process("org.junit.runners.RuleContainer", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.runners.model.TestClassTest");
+//        fwk.process("org.junit.runners.model.TestClass", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.runners.parameterized.BlockJUnit4ClassRunnerWithParametersTest");
+//        fwk.process("org.junit.runners.parameterized.BlockJUnit4ClassRunnerWithParameters", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.rules.TempFolderRuleTest");
+//        fwk.process("org.junit.rules.TemporaryFolder", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.rules.TestWatcherTest");
+//        fwk.process("org.junit.rules.TestWatcher", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.internal.builders.AnnotatedBuilderTest");
+//        fwk.process("org.junit.internal.builders.AnnotatedBuilder", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.internal.runners.statements.ExpectExceptionTest");
+//        fwk.process("org.junit.internal.runners.statements.ExpectException", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.internal.runners.ErrorReportingRunnerTest");
+//        fwk.process("org.junit.internal.runners.ErrorReportingRunner", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.internal.MethodSorterTest");
+//        fwk.process("org.junit.internal.MethodSorter", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.experimental.categories.CategoryValidatorTest");
+//        fwk.process("org.junit.experimental.categories.CategoryValidator", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+//        Main.useJunit("", "sootOutput/junit-junit/hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.junit.samples.money.MoneyTest");
+//        fwk.process("junit.samples.money.Money", 5000, args,
+//                "./sootOutput/junit-junit/",
+//                "", "");
+
+
+
 ////        fwk.process("com.classming.Hello", 1000, args, null, "", "");
 //        fwk.process("avrora.Main", 3000,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
@@ -443,14 +579,14 @@ public class EvolutionFrameworkResumable {
 //                new String[]{"compile", "jar", "run"},
 //                "./sootOutput/ant/ant-launcher/",
 //                null, "");
-        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 50000,
-                new String[]{"package"},
-                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
-                null,
-                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
-                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
-                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
-                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
+//        fwk.process("org.codehaus.plexus.classworlds.launcher.Launcher", 50000,
+//                new String[]{"package"},
+//                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+//                null,
+//                "-Dclassworlds.conf=sootOutput/apache-maven-3.6.3/bin/m2.conf " +
+//                        "-Dmaven.home=sootOutput/apache-maven-3.6.3 " +
+//                        "-Dlibrary.jansi.path=sootOutput/apache-maven-3.6.3/lib/jansi-native " +
+//                        "-Dmaven.multiModuleProjectDirectory=sootOutput/apache-maven-3.6.3/bin");
 //        fwk.process("org.apache.xml.resolver.apps.resolver", 30000,
 //                new String[]{"-d", "2", "-c", "sootOutput/resolver/example/catalog.xml", "-p", "-//Example//DTD Example V1.0//EN", "public"},
 //                "./sootOutput/resolver/", null, "");
