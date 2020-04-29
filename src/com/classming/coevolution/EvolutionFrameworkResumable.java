@@ -8,6 +8,7 @@ import com.classming.Vector.LevenshteinDistance;
 import com.classming.Vector.MathTool;
 import com.classming.record.Recover;
 import com.classming.rf.*;
+import com.classming.util.OfflineClusterUtil;
 import soot.G;
 
 import java.io.*;
@@ -31,6 +32,7 @@ public class EvolutionFrameworkResumable {
         makeDir("./RejectHistory/");
         makeDir("./nolivecode/");
         makeDir("./tmp/");
+        makeDir("./tmpRecord");
     }
 
     public void makeDir(String path){
@@ -55,7 +57,7 @@ public class EvolutionFrameworkResumable {
         actionContainer.put(State.GOTO, gotoAction);
     }
 
-    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
+    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions, boolean saveHistory) throws IOException {
         if(classPath != null && !classPath.equals("")){
             if(classPath.contains(File.pathSeparator)){
                 int psIdx = classPath.indexOf(File.pathSeparator);
@@ -82,7 +84,7 @@ public class EvolutionFrameworkResumable {
             classPath = "";
         }
 
-        int iterationLeft = readLeftIterationNum(classPath+"currentPopulation/", iterationLimit);
+        int iterationLeft = readLeftIterationNum(classPath+"/currentPopulation/", iterationLimit);
         if(iterationLeft <= 0)
             return;
 
@@ -125,11 +127,17 @@ public class EvolutionFrameworkResumable {
             checkBackpathNull(mutateAcceptHistory, "In initialization, mutateAcceptHistory:(size="+mutateAcceptHistory.size()+")");
         }
         int iterationCount = 0;
+        Set<String> instructionHistory = saveHistory?OfflineClusterUtil.loadInstructionHistory("./tmpRecord/") : null;
         while (iterationCount < iterationLimit) {
             int currentSize = mutateAcceptHistory.size();
             for (int j = 0; j < currentSize; j ++) {
                 State current = mutateAcceptHistory.get(j);
                 current.setTarget(Recover.recoverFromPath(current.getTarget()));
+                String recordPath = OfflineClusterUtil.convertBack2Log(current.getTarget().getBackPath());
+                if (saveHistory && !instructionHistory.contains(recordPath)) {
+                    OfflineClusterUtil.dumpInstructions(recordPath, current.getTarget().getClassPureInstructionFlow());
+                    instructionHistory.add(recordPath);
+                }
                 String nextActionString = current.selectActionAndMutatedMethod();
                 Action nextAction = EvolutionFrameworkResumable.getActionContainer().get(nextActionString);
                 State nextState = nextAction.proceedAction(current.getTarget(), mutateAcceptHistory);
@@ -421,10 +429,14 @@ public class EvolutionFrameworkResumable {
     public static void main(String[] args) throws IOException {
         EvolutionFrameworkResumable fwk = new EvolutionFrameworkResumable();
         Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
-                "../tools.jar", "org.apache.tools.ant.AntClassLoaderTest");
-        fwk.process("org.apache.tools.ant.AntClassLoader", 10000, args,
-                "./sootOutput/junit-ant/",
-                "", "");
+                "", "com.classming.HelloTest");
+        fwk.process("com.classming.Hello", 1000, args,
+                 "./sootOutput/", "", "", true);
+//        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+//                "../tools.jar", "org.apache.tools.ant.AntClassLoaderTest");
+//        fwk.process("org.apache.tools.ant.AntClassLoader", 10000, args,
+//                "./sootOutput/junit-ant/",
+//                "", "");
 //        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
 //                "../tools.jar", "org.apache.tools.ant.DirectoryScannerTest");
 //        fwk.process("org.apache.tools.ant.DirectoryScanner", 10000, args,
