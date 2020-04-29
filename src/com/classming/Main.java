@@ -7,9 +7,7 @@ import soot.options.Options;
 import soot.util.JasminOutputStream;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +25,7 @@ public class Main {
     private static String extraCp = "";
     private static boolean usedJunit = false;
     private static String junitCmd = ""; // java -cp .;source/class/path;path/junit.jar;path/hamcrest-jar org.junit.runner.JUnitCore [TestClass]
+    private static String junitPath, hamcrestPath, testClassName, toolsJarPath = "";
 
     public static boolean forceResolveFailed = false;
 
@@ -207,6 +206,10 @@ public class Main {
                 pathes.add(s);
             }
         }
+        if(usedJunit){
+            pathes.add(junitPath);
+            pathes.add(hamcrestPath);
+        }
         Options.v().set_soot_classpath(generateClassPath(pathes));
         Scene.v().loadNecessaryClasses();
 
@@ -220,9 +223,11 @@ public class Main {
 
     public static Set<String> getExecutedLiveInstructions(String className, String signature, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
+        String cmd;
         if (usedJunit) {
-            cmd = junitCmd;
+            cmd = generateJunitCmd(jvmOptions);
+        }else{
+            cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
         }
         if (args != null && args.length != 0) {
             for (String arg: args) {
@@ -262,7 +267,7 @@ public class Main {
                 while ((line1 = br1.readLine()) != null) {
 //                    allLines += line1 + "\n";
 //                    noOutput = false;
-//                        System.out.println(line1);
+//                    System.out.println(line1);
                     if (line1.contains(LOG_PREVIOUS) && line1.contains(signature)) {
                         String[] elements = line1.split("[*]+");
                         String currentStmt = elements[3].trim();
@@ -302,13 +307,31 @@ public class Main {
         return junitCmd;
     }
 
+    public static void useJunit(String junitPath, String hamcrestPath, String toolsJarPath, String testClassName){
+        if (!usedJunit)
+            switchJunit();
+        Main.junitPath = junitPath;
+        Main.hamcrestPath = hamcrestPath;
+        Main.testClassName = testClassName;
+        Main.toolsJarPath = toolsJarPath;
+    }
+
+    public static String generateJunitCmd(String jvmOptions){
+        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp
+                + File.pathSeparator + junitPath + File.pathSeparator + hamcrestPath + File.pathSeparator + toolsJarPath
+                + " " + jvmOptions + " org.junit.runner.JUnitCore " + testClassName;
+        return cmd;
+    }
+
 
     public static List<String> getPureMainInstructionsFlow(String className, String[] args, String jvmOptions) throws IOException {
         Set<String> usedStmt = new HashSet<>();
         List<String> result = new ArrayList<>();
-        String cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
+        String cmd;
         if (usedJunit) {
-            cmd = junitCmd;
+            cmd = generateJunitCmd(jvmOptions);
+        }else{
+            cmd = "java -Xbootclasspath/a:" + dependencies + " -classpath " + generated + extraCp + " " + jvmOptions + " " + className;
         }
         if (args != null && args.length != 0) {
             for (String arg: args) {

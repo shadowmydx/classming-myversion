@@ -149,8 +149,12 @@ public class EvolutionFramework {
 
     public static void main(String[] args) throws IOException {
         EvolutionFramework fwk = new EvolutionFramework();
-        Main.setJunitCommand("D:\\NEW-RESEARCH\\junit-4.12.jar", "D:\\NEW-RESEARCH\\hamcrest-core-1.3.jar", "com.classming.HelloTest", "");
-        fwk.process("com.classming.Hello", 1000, args, null, "", "");
+        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
+                "../tools.jar", "org.apache.tools.ant.AntClassLoaderTest");
+//        fwk.process("com.classming.Hello", 1000, args, null, "", "");
+        fwk.process("org.apache.tools.ant.AntClassLoader", 1000, args,
+                "./sootOutput/junit-ant/",
+                "", "");
 //        fwk.process("avrora.Main", 783,
 //                new String[]{"-action=cfg","sootOutput/avrora-cvs-20091224/example.asm"},
 //                "./sootOutput/avrora-cvs-20091224/",null);
