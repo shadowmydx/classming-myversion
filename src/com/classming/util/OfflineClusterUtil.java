@@ -2,6 +2,7 @@ package com.classming.util;
 
 import com.classming.cluster.ClusterResult;
 import com.classming.cluster.DBScanCluster;
+import com.classming.cluster.InstructionFlow;
 
 import java.io.*;
 import java.util.*;
@@ -57,6 +58,52 @@ public class OfflineClusterUtil {
             }
         }
         return lists;
+    }
+
+    public static Map<String, List<InstructionFlow>> getPureInstructionFlows (String path) {
+        Map<String, List<InstructionFlow>> seedClassesMap = new HashMap<>();
+
+        int count = 1;
+        File dir = new File(path);
+        for (File file: Objects.requireNonNull(dir.listFiles())) {
+            String fileName = file.getName();
+            if (!fileName.endsWith(".log")) {
+                continue;
+            }
+            try {
+                String seedName = fileName.substring(fileName.indexOf("."), fileName.length());
+
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                List<String> list = new ArrayList<>();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    list.add(line);
+                }
+                InstructionFlow instructionFlow = new InstructionFlow(list);
+
+                if (seedClassesMap.containsKey(seedName)) {
+                    List<InstructionFlow> mutateClassList = seedClassesMap.get(seedName);
+                    mutateClassList.add(instructionFlow);
+//                System.out.printf("Add to Map <%s>    ", seedName);
+//                System.out.printf("the size of it: %d \n", seedClassesMap.get(seedName).size());
+                }else {
+                    List<InstructionFlow> mutateClassList = new ArrayList<>();
+                    mutateClassList.add(instructionFlow);
+                    seedClassesMap.put(seedName, mutateClassList);
+//                System.out.printf("Create the Map<%s>     ", seedName);
+//                System.out.printf("the size of it: %d \n", seedClassesMap.get(seedName).size());
+                }
+                int size = Objects.requireNonNull(dir.listFiles()).length;
+                System.out.printf("load class %s, %04.2f%%\n", fileName, (count + 0.0) / size * 100);
+                count++;
+            } catch (Exception e) {
+                System.err.println("load instructions failed!");
+                System.err.println(e.getMessage());
+                System.err.println(e.fillInStackTrace());
+                System.exit(-1);
+            }
+        }
+        return seedClassesMap;
     }
 
     public static ClusterResult getClusterInfo() {
