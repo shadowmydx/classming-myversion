@@ -17,7 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-public class EvolutionFrameworkResumable {
+public class InstructionDownloader {
     private static final int DEAD_END = -1;
     public static final int POPULATION_LIMIT = 20;
     public static String cpSeparator = ":";  // classpath separator
@@ -26,7 +26,7 @@ public class EvolutionFrameworkResumable {
     private static Action lookupAction = new LookupAction();
     private static Action returnAction = new ReturnAction();
 
-    EvolutionFrameworkResumable(){
+    InstructionDownloader(){
         cpSeparator = File.pathSeparator;
         makeDir("./AcceptHistory/");
         makeDir("./RejectHistory/");
@@ -47,7 +47,7 @@ public class EvolutionFrameworkResumable {
     }
 
     public static void setActionContainer(Map<String, Action> actionContainer) {
-        EvolutionFrameworkResumable.actionContainer = actionContainer;
+        InstructionDownloader.actionContainer = actionContainer;
     }
 
     private static Map<String, Action> actionContainer = new HashMap<>();
@@ -57,7 +57,7 @@ public class EvolutionFrameworkResumable {
         actionContainer.put(State.GOTO, gotoAction);
     }
 
-    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions) throws IOException {
+    public void process(String className, int iterationLimit, String[] args, String classPath, String dependencies, String jvmOptions, boolean saveHistory) throws IOException {
         if(classPath != null && !classPath.equals("")){
             if(classPath.contains(File.pathSeparator)){
                 int psIdx = classPath.indexOf(File.pathSeparator);
@@ -127,14 +127,19 @@ public class EvolutionFrameworkResumable {
             checkBackpathNull(mutateAcceptHistory, "In initialization, mutateAcceptHistory:(size="+mutateAcceptHistory.size()+")");
         }
         int iterationCount = 0;
+        Set<String> instructionHistory = saveHistory?OfflineClusterUtil.loadInstructionHistory("./tmpRecord/") : null;
         while (iterationCount < iterationLimit) {
             int currentSize = mutateAcceptHistory.size();
             for (int j = 0; j < currentSize; j ++) {
                 State current = mutateAcceptHistory.get(j);
                 current.setTarget(Recover.recoverFromPath(current.getTarget()));
                 String recordPath = OfflineClusterUtil.convertBack2Log(current.getTarget().getBackPath());
+                if (saveHistory && !instructionHistory.contains(recordPath)) {
+                    OfflineClusterUtil.dumpInstructions(recordPath, current.getTarget().getClassPureInstructionFlow());
+                    instructionHistory.add(recordPath);
+                }
                 String nextActionString = current.selectActionAndMutatedMethod();
-                Action nextAction = EvolutionFrameworkResumable.getActionContainer().get(nextActionString);
+                Action nextAction = InstructionDownloader.getActionContainer().get(nextActionString);
                 State nextState = nextAction.proceedAction(current.getTarget(), mutateAcceptHistory);
                 iterationCount ++;
                 MutateClass newOne = nextState.getTarget();
@@ -195,20 +200,20 @@ public class EvolutionFrameworkResumable {
         }catch (Exception e){
             e.printStackTrace();
         }
-            for (State state: mutateAcceptHistory) {
-                System.out.print(state.getCoFitnessScore() + " ");
-                totalScore.add(state.getCoFitnessScore());
-            }
-            System.out.println();
-            System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
-            mutateRejectHistory.addAll(mutateAcceptHistory);
-            for (State state: mutateRejectHistory) {
-                state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
-                totalScore.add(state.getCoFitnessScore());
-            }
-            System.out.println("Total average:" + MathTool.mean(totalScore));
-            System.out.println();
-            System.out.println(MathTool.mean(totalScore));
+        for (State state: mutateAcceptHistory) {
+            System.out.print(state.getCoFitnessScore() + " ");
+            totalScore.add(state.getCoFitnessScore());
+        }
+        System.out.println();
+        System.out.println("Basic pattern average: " + MathTool.mean(totalScore));
+        mutateRejectHistory.addAll(mutateAcceptHistory);
+        for (State state: mutateRejectHistory) {
+            state.setCoFitnessScore(Fitness.fitness(state, mutateRejectHistory));
+            totalScore.add(state.getCoFitnessScore());
+        }
+        System.out.println("Total average:" + MathTool.mean(totalScore));
+        System.out.println();
+        System.out.println(MathTool.mean(totalScore));
         G.reset();
     }
 
@@ -335,21 +340,21 @@ public class EvolutionFrameworkResumable {
     public static void cleanTmpFolder(String currentClassPath){
         String targetDir = "./tmp/";
         List<String> classPath = new ArrayList<>(Arrays.asList(
-            "./sootOutput/avrora-cvs-20091224/",
-            "./sootOutput/batik-all/",
-            "./sootOutput/eclipse/",
-            "./sootOutput/sunflow-0.07.2/",
-            "./sootOutput/jython/",
-            "./sootOutput/fop/",
-            "./sootOutput/pmd-4.2.5/",
-            "./sootOutput/ant/ant-launcher/",
-            "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
-            "./sootOutput/resolver/",
-            "./sootOutput/apache-any23-cli-2.3/",
-            "./sootOutput/xalan/",
-            "sootOutput/ivy-2.5.0/",
-            "sootOutput/tika-app-1.24/",
-            "./sootOutput/junit-ant/"
+                "./sootOutput/avrora-cvs-20091224/",
+                "./sootOutput/batik-all/",
+                "./sootOutput/eclipse/",
+                "./sootOutput/sunflow-0.07.2/",
+                "./sootOutput/jython/",
+                "./sootOutput/fop/",
+                "./sootOutput/pmd-4.2.5/",
+                "./sootOutput/ant/ant-launcher/",
+                "./sootOutput/apache-maven-3.6.3/boot/plexus-classworlds-2.6.0/",
+                "./sootOutput/resolver/",
+                "./sootOutput/apache-any23-cli-2.3/",
+                "./sootOutput/xalan/",
+                "sootOutput/ivy-2.5.0/",
+                "sootOutput/tika-app-1.24/",
+                "./sootOutput/junit-ant/"
         ));
         if(!classPath.contains(currentClassPath)){
             classPath.add(currentClassPath);
@@ -422,11 +427,11 @@ public class EvolutionFrameworkResumable {
     }
 
     public static void main(String[] args) throws IOException {
-        EvolutionFrameworkResumable fwk = new EvolutionFrameworkResumable();
+        InstructionDownloader fwk = new InstructionDownloader();
         Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
                 "", "com.classming.HelloTest");
         fwk.process("com.classming.Hello", 1000, args,
-                 "./sootOutput/", "", "");
+                "./sootOutput/", "", "", true);
 //        Main.useJunit("../junit-4.12.jar", "../hamcrest-core-1.3.jar",
 //                "../tools.jar", "org.apache.tools.ant.AntClassLoaderTest");
 //        fwk.process("org.apache.tools.ant.AntClassLoader", 10000, args,
