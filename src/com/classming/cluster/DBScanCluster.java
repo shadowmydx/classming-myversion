@@ -17,16 +17,32 @@ public class DBScanCluster implements Cluster {
     private List<Point> points;
     private int[][] distance;
 
-    private final int DBScan_radius;
-    private final int DBScan_minPts;
+    private int DBScan_radius;
+    private int DBScan_minPts;
 
     public DBScanCluster() {
-        this(2, 2);
+        this(2, 5);
     }
 
     public DBScanCluster(int r, int m) {
         this.DBScan_minPts = m;
         this.DBScan_radius = r;
+    }
+
+    public int getDBScan_radius() {
+        return DBScan_radius;
+    }
+
+    public void setDBScan_radius(int dBScan_radius) {
+        DBScan_radius = dBScan_radius;
+    }
+
+    public int getDBScan_minPts() {
+        return DBScan_minPts;
+    }
+
+    public void setDBScan_minPts(int dBScan_minPts) {
+        DBScan_minPts = dBScan_minPts;
     }
 
     @Override
@@ -37,22 +53,24 @@ public class DBScanCluster implements Cluster {
             loadPoints("./tmpRecord/");
         if (distance == null)
             loadDistance();
+        for (Point p : points) p.visited = false;
         List<Point> cores = new ArrayList<>();
-        //find cores
+        // find cores
         int len = points.size();
         for (int i = 0; i < len; i++) {
             Point point = points.get(i);
             int cnt = 0;
             for (int j = 0; j < len; j++) {
                 Point other = points.get(j);
-                if (point != other && distance[i][j] < DBScan_radius)
+                if (point != other && point.distanceTo(other) < DBScan_radius) {
                     cnt++;
+                }
             }
             if (cnt >= DBScan_minPts)
                 cores.add(point);
         }
 
-        //set groups
+        // set groups
         int id = 0;
         for (Point p : cores) {
             if (p.visited)
@@ -112,7 +130,7 @@ public class DBScanCluster implements Cluster {
         }
     }
 
-    private static class Point {
+    private class Point {
         public List<String> instructions;
         public boolean visited;
         public int clusterId;
@@ -126,7 +144,9 @@ public class DBScanCluster implements Cluster {
         }
 
         public int distanceTo(Point other) {
-            return LevenshteinDistance.computeLevenshteinDistance(this.instructions, other.instructions);
+            if (distance == null)
+                loadDistance();
+            return distance[this.pointId][other.pointId];
         }
     }
 }
