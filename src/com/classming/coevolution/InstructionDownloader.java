@@ -134,16 +134,16 @@ public class InstructionDownloader {
                 State current = mutateAcceptHistory.get(j);
                 current.setTarget(Recover.recoverFromPath(current.getTarget()));
                 String recordPath = OfflineClusterUtil.convertBack2Log(current.getTarget().getBackPath());
-                if (saveHistory && !instructionHistory.contains(recordPath)) {
-                    OfflineClusterUtil.dumpInstructions(recordPath, current.getTarget().getClassPureInstructionFlow());
-                    instructionHistory.add(recordPath);
-                }
                 String nextActionString = current.selectActionAndMutatedMethod();
                 Action nextAction = InstructionDownloader.getActionContainer().get(nextActionString);
                 State nextState = nextAction.proceedAction(current.getTarget(), mutateAcceptHistory);
                 iterationCount ++;
                 MutateClass newOne = nextState.getTarget();
                 if (newOne != null) {
+                    if (saveHistory && !instructionHistory.contains(recordPath)) {
+                        OfflineClusterUtil.dumpInstructions(recordPath, current.getTarget().getClassPureInstructionFlow());
+                        instructionHistory.add(recordPath);
+                    }
                     int totalSize = mutateAcceptHistory.size() + mutateRejectHistory.size();
                     System.out.println("Current size is : " + totalSize + ", iteration is :" + iterationCount + ", average distance is " + MathTool.mean(averageDistance));
                     MethodCounter currentCounter = newOne.getCurrentMethod();
